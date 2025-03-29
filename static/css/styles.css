@@ -1,0 +1,309 @@
+:root {
+    --primary-color: #4a6fa5;
+    --primary-hover: #3a5a8f;
+    --secondary-color: #f0d9b5;
+    --white-bg: #f5ede1;
+    --black-bg: #1d1a18;
+    --text-dark: #333;
+    --text-light: #f5f5f5;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+    --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Base Styles */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    color: var(--text-dark);
+    line-height: 1.6;
+}
+
+/* Game Container */
+.game-container {
+    display: flex;
+    flex-wrap: nowrap; /* Prevent wrapping by default */
+    justify-content: space-between;
+    align-items: flex-start; /* Align items to the top */
+    gap: 30px; /* Space between the board and the panel */
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+}
+.game-container:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.board-and-status {
+    flex: 3; /* Allocate 75% of the space to the board */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    width: 100%; /* Ensure it scales properly */
+}
+
+/* Board Column */
+.board-column {
+    flex: 1;
+    min-width: 600px;
+    max-width: 650px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.game-status {
+    width: 100%;
+    max-width: 650px;
+    padding: 12px;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    font-size: 1.1em;
+}
+
+/* Chess Board */
+#myBoard {
+    width: 100%;
+    max-width: 650px;
+    height: auto;
+    max-height: 650px;
+    margin: 0 auto;
+    box-shadow: var(--shadow-lg);
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+/* Game Info Panel */
+.game-info {
+    flex: 1; /* Allocate 25% of the space to the game info panel */
+    min-width: 300px; /* Ensure the panel doesn't shrink too much */
+    max-width: 400px;
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Player Info */
+.player-info {
+    text-align: center;
+}
+
+.white-player, .black-player {
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin: 6px 0;
+    transition: var(--transition);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9em;
+}
+
+.white-player {
+    background-color: var(--white-bg);
+    color: var(--text-dark);
+}
+
+.black-player {
+    background-color: var(--black-bg);
+    color: var(--text-light);
+}
+
+/* Move Table */
+.move-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.move-table {
+    width: 100%;
+    border-collapse: collapse; /* Remove gaps between table cells */
+    font-size: 0.85em; /* Reduce font size */
+}
+
+.move-table th, .move-table td {
+    padding: 4px 8px; /* Reduce cell padding */
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.move-table th {
+    background-color: #f2f2f2;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+}
+
+.move-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.move-item {
+    cursor: pointer;
+    padding: 4px 6px; /* Reduce padding for move items */
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.move-item:hover {
+    background-color: #e6f0ff;
+}
+
+.move-item.highlighted {
+    background-color: var(--secondary-color);
+    font-weight: bold;
+}
+
+/* Captured Pieces */
+.captured-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 15px;
+}
+
+.captured-label {
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.captured-pieces {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 30px;
+    align-items: center;
+    background-color: white;
+    padding: 8px;
+    border-radius: 4px;
+    box-shadow: var(--shadow-sm);
+}
+
+.captured-piece {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+/* Game Controls */
+.controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 15px;
+}
+
+.controls button {
+    transition: var(--transition);
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    flex: 1 1 45%;
+    min-width: 100px;
+    box-shadow: var(--shadow-sm);
+}
+
+.controls button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+#flipBoard {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #5d5d5d;
+}
+
+#flipBoard:hover {
+    background: #4a4a4a;
+}
+
+#flipBoard svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Game Status */
+#status {
+    font-size: 1em;
+    padding: 8px;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Special States */
+.check {
+    background-color: #ffe08a !important;
+    box-shadow: inset 0 0 10px 5px rgba(255, 166, 0, 0.5);
+    animation: pulseWarning 1.5s infinite;
+}
+
+.checkmate {
+    background-color: #ff9e9e !important;
+    box-shadow: inset 0 0 10px 5px rgba(255, 0, 0, 0.5);
+    animation: pulseDanger 1.5s infinite;
+}
+
+/* Animations */
+@keyframes pulseWarning {
+    0% { box-shadow: inset 0 0 10px 5px rgba(255, 166, 0, 0.5); }
+    50% { box-shadow: inset 0 0 15px 7px rgba(255, 166, 0, 0.7); }
+    100% { box-shadow: inset 0 0 10px 5px rgba(255, 166, 0, 0.5); }
+}
+
+@keyframes pulseDanger {
+    0% { box-shadow: inset 0 0 10px 5px rgba(255, 0, 0, 0.5); }
+    50% { box-shadow: inset 0 0 15px 7px rgba(255, 0, 0, 0.7); }
+    100% { box-shadow: inset 0 0 10px 5px rgba(255, 0, 0, 0.5); }
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .game-container {
+        flex-direction: wrap;
+        justify-content: center;
+    }
+    
+    .board-and-status, .game-info {
+        flex: 1 1 100%; /* Take full width */
+        max-width: 100%;
+    }
+    
+    .game-info {
+        margin-top: 20px; /* Add spacing between the board and the panel */
+    }
+
+    .controls button {
+        flex: 1 1 100%;
+    }
+}

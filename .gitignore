@@ -1,0 +1,16 @@
+node_modules
+
+# Compiled Python files
+*.pyc
+*.pyo
+__pycache__/
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*.bak
+*.orig
+.DS_Store
+Thumbs.db

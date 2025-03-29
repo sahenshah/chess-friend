@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Game</title>
+    
+    <!-- Chessboard.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+</head>
+<body>
+    {% extends "layout.html" %}
+    {% block title %}
+        Play Chess
+    {% endblock %}
+    
+    {% block main %}
+    <div class="game-container">
+        <!-- Chessboard container -->
+        <div id="myBoard"></div>
+        
+        <!-- Game Info Container -->
+        <div class="game-info">
+            <!-- Game status display -->
+            <div id="status"></div>
+            
+            <!-- Move List -->
+            <h3>Move List</h3>
+            <ol id="move-list"></ol>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    
+    <script src="{{ url_for('static', filename='js/play_vs.js') }}"></script>
+    
+    {% endblock %}
+</body>
+</html>

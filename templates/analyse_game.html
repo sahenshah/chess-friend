@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Friend</title>
+    <!-- Chessboard.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+</head>
+<body>
+
+    {% extends "layout.html" %}
+
+    {% block title %}
+        Analyse Game
+    {% endblock %}
+
+    {% block main %}
+    
+    <div class="game-container">
+        <!-- Board and Status Container -->
+        <div class="board-and-status">
+            <!-- Chessboard container -->
+            <div id="myBoard"></div>
+            
+            <!-- Game status display - now below the board -->
+            <div id="status" class="game-status"></div>
+        </div>
+
+        <!-- Game Info Container -->
+        <div class="game-info">
+            <!-- PGN Upload and Player Info -->            
+            <div id="uploadSection">
+                <h4>Upload PGN</h4>
+                <input type="file" id="pgnUpload" accept=".pgn">
+            </div>
+            <div id="playerInfo" class="player-info" style="display: none;">
+                <div class="white-player">
+                    White: <span id="whitePlayerName"></span>
+                </div>
+                <div class="black-player">
+                    Black: <span id="blackPlayerName"></span>
+                </div>
+                <div class="event-date">
+                    Event Date: <span id="eventDate"></span>
+                </div>
+            </div>
+            
+            <!-- Captured Pieces and Move List -->
+            <div class="move-display-container">
+                <!-- Captured pieces sections remain the same -->
+                <div class="captured-group">
+                    <div class="captured-label">White captured:</div>
+                    <div id="black-captured" class="captured-pieces"></div>
+                </div>
+                <div class="captured-group">
+                    <div class="captured-label">Black captured:</div>
+                    <div id="white-captured" class="captured-pieces"></div>
+                </div>
+                
+                <!-- Replace the two move lists with a single table container -->
+                <div id="move-list-container" class="move-table-container"></div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="controls">
+                <button id="prevMove">Previous Move</button>
+                <button id="nextMove">Next Move</button>
+                <button id="flipBoard" class="flip-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
+                    </svg>
+                    Flip Board
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+    <script src="{{ url_for('static', filename='js/analyse_game.js') }}"></script>
+    
+    {% endblock %}
+
+</body>
+</html>
