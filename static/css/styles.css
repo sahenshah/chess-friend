@@ -207,10 +207,9 @@ body {
 /* Game Controls */
 .controls {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 8px;
-    margin-top: 15px;
+    justify-content: center; /* Center the buttons */
+    gap: 10px; /* Add spacing between buttons */
+    margin-top: 15px; /* Add spacing above the controls */
 }
 
 .controls button {
@@ -223,7 +222,6 @@ body {
     cursor: pointer;
     font-size: 0.9em;
     font-weight: 500;
-    flex: 1 1 45%;
     min-width: 100px;
     box-shadow: var(--shadow-sm);
 }

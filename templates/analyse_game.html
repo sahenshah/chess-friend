@@ -23,8 +23,20 @@
             <!-- Chessboard container -->
             <div id="myBoard"></div>
             
-            <!-- Game status display - now below the board -->
+            <!-- Game status display -->
             <div id="status" class="game-status"></div>
+
+            <!-- Controls (moved here) -->
+            <div class="controls">
+                <button id="prevMove">Previous Move</button>
+                <button id="nextMove">Next Move</button>
+                <button id="flipBoard" class="flip-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
+                    </svg>
+                    Flip Board
+                </button>
+            </div>
         </div>
 
         <!-- Game Info Container -->
@@ -48,7 +60,6 @@
             
             <!-- Captured Pieces and Move List -->
             <div class="move-display-container">
-                <!-- Captured pieces sections remain the same -->
                 <div class="captured-group">
                     <div class="captured-label">White captured:</div>
                     <div id="black-captured" class="captured-pieces"></div>
@@ -57,23 +68,8 @@
                     <div class="captured-label">Black captured:</div>
                     <div id="white-captured" class="captured-pieces"></div>
                 </div>
-                
-                <!-- Replace the two move lists with a single table container -->
                 <div id="move-list-container" class="move-table-container"></div>
             </div>
-
-            <!-- Navigation Controls -->
-            <div class="controls">
-                <button id="prevMove">Previous Move</button>
-                <button id="nextMove">Next Move</button>
-                <button id="flipBoard" class="flip-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
-                    </svg>
-                    Flip Board
-                </button>
-            </div>
-
         </div>
     </div>
 
