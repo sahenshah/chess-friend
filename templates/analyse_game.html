@@ -68,7 +68,20 @@
                     <div class="captured-label">Black captured:</div>
                     <div id="white-captured" class="captured-pieces"></div>
                 </div>
-                <div id="move-list-container" class="move-table-container"></div>
+                <div id="move-list-container" class="move-table-container">
+                    <table class="move-table">
+                        <thead>
+                            <tr>
+                                <th>Move #</th>
+                                <th>White</th>
+                                <th>Black</th>
+                            </tr>
+                        </thead>
+                        <tbody id="move-list-body">
+                            <!-- Moves will be dynamically populated here -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

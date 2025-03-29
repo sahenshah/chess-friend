@@ -137,11 +137,11 @@ body {
 .move-table {
     width: 100%;
     border-collapse: collapse; /* Remove gaps between table cells */
-    font-size: 0.85em; /* Reduce font size */
+    font-size: 0.85em; /* Compact font size */
 }
 
 .move-table th, .move-table td {
-    padding: 4px 8px; /* Reduce cell padding */
+    padding: 4px 8px; /* Compact cell padding */
     text-align: center;
     border-bottom: 1px solid #eee;
 }
@@ -153,13 +153,18 @@ body {
     font-weight: 600;
 }
 
+.move-table th:first-child, .move-table td:first-child {
+    width: 50px; /* Reduce the width of the Move # column */
+    text-align: center; /* Center-align the content */
+}
+
 .move-table tr:nth-child(even) {
     background-color: #f9f9f9;
 }
 
 .move-item {
     cursor: pointer;
-    padding: 4px 6px; /* Reduce padding for move items */
+    padding: 4px 6px; /* Compact padding for move items */
     border-radius: 4px;
     transition: var(--transition);
 }

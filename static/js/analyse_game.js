@@ -67,63 +67,32 @@ function updateGameStatus() {
 
 // Update move list display
 function updateMoveList() {
-    const moveListContainer = document.getElementById('move-list-container');
-    
-    if (!moveListContainer) return;
-    
-    // Clear previous content
-    moveListContainer.innerHTML = '';
-    
-    // Create table structure
-    const table = document.createElement('table');
-    table.className = 'move-table';
-    
-    // Add header row
-    const headerRow = document.createElement('tr');
-    headerRow.innerHTML = '<th>White</th><th>Black</th>';
-    table.appendChild(headerRow);
-    
-    // Group moves into pairs (white+black)
-    const movePairs = [];
+    const moveListBody = document.getElementById('move-list-body');
+    moveListBody.innerHTML = ''; // Clear the table body
+
     for (let i = 0; i < moves.length; i += 2) {
-        movePairs.push({
-            white: moves[i],
-            black: i + 1 < moves.length ? moves[i + 1] : null
-        });
-    }
-    
-    // Create table rows
-    movePairs.forEach((pair, pairIndex) => {
+        const moveNumber = Math.floor(i / 2) + 1; // Calculate the move number
+        const whiteMove = moves[i] || ''; // Get the white move
+        const blackMove = moves[i + 1] || ''; // Get the black move
+
+        // Create a new row for the move
         const row = document.createElement('tr');
-        
-        // White move cell
-        const whiteCell = document.createElement('td');
-        if (pair.white) {
-            const whiteMove = document.createElement('div');
-            whiteMove.className = 'move-item';
-            whiteMove.setAttribute('data-index', pairIndex * 2);
-            whiteMove.textContent = pair.white;
-            whiteCell.appendChild(whiteMove);
-        }
-        
-        // Black move cell
-        const blackCell = document.createElement('td');
-        if (pair.black) {
-            const blackMove = document.createElement('div');
-            blackMove.className = 'move-item';
-            blackMove.setAttribute('data-index', pairIndex * 2 + 1);
-            blackMove.textContent = pair.black;
-            blackCell.appendChild(blackMove);
-        }
-        
-        row.appendChild(whiteCell);
-        row.appendChild(blackCell);
-        table.appendChild(row);
-    });
-    
-    moveListContainer.appendChild(table);
-    highlightCurrentMove();
-    scrollToCurrentMove();
+        row.innerHTML = `
+            <td>${moveNumber}</td>
+            <td class="move-item" data-index="${i}">${whiteMove}</td>
+            <td class="move-item" data-index="${i + 1}">${blackMove}</td>
+        `;
+
+        // Add click event listeners for navigation
+        row.querySelectorAll('.move-item').forEach((cell) => {
+            cell.addEventListener('click', function () {
+                const clickedIndex = parseInt(this.getAttribute('data-index'));
+                navigateToMove(clickedIndex);
+            });
+        });
+
+        moveListBody.appendChild(row); // Append the row to the table body
+    }
 }
 
 function highlightCurrentMove() {
