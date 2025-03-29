@@ -1,3 +1,12 @@
-Flask
+# Flask (if using Flask as the backend framework)
+Flask==2.2.3
 requests
-python-dotenv
+
+# Jinja2 (used for templating in Flask or Django)
+Jinja2==3.1.2
+
+# Werkzeug (used by Flask for WSGI)
+Werkzeug==2.2.3
+
+# Environment management
+python-dotenv==1.0.0
