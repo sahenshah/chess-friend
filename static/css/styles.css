@@ -47,6 +47,8 @@ body {
     align-items: center;
     gap: 15px;
     width: 100%; /* Ensure it scales properly */
+    max-width: 650px; /* Limit the width of the parent container */
+    margin: 0 auto; /* Center the container */
 }
 
 /* Board Column */
@@ -351,6 +353,9 @@ body {
     text-align: center;
     font-weight: 500;
     box-shadow: var(--shadow-sm);
+    width: 100%;
+    max-width: 650px;
+    margin: 0 auto; /* Center the status bar horizontally */
 }
 
 /* Nav-Bar */
