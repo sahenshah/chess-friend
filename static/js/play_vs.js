@@ -5,7 +5,10 @@ let capturedPieces = { white: [], black: [] };
 let selectedSquare = null;
 
 function onDragStart(source, piece, position, orientation) {
-    if (game.game_over()) return false;
+    // Prevent dragging if the game is over
+    if (game.game_over()) {
+        return false;
+    }
 
     // Only allow dragging pieces for the side to move
     if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
@@ -50,16 +53,30 @@ function handlePieceSelection(source, piece) {
 }
 
 function onDrop(source, target) {
-    if (source === target) {
-        return;
+    // Check if the move is a pawn promotion
+    const piece = game.get(source);
+    const isPromotion = piece && piece.type === 'p' && (target[1] === '8' || target[1] === '1');
+
+    let promotion = 'q'; // Default promotion to queen
+    if (isPromotion) {
+        // Prompt the player to choose a promotion piece
+        promotion = prompt(
+            'Promote to (q = Queen, r = Rook, b = Bishop, n = Knight):',
+            'q'
+        );
+
+        // Validate the input
+        if (!['q', 'r', 'b', 'n'].includes(promotion)) {
+            alert('Invalid choice! Defaulting to Queen.');
+            promotion = 'q';
+        }
     }
 
     // Try to make the move
     const move = game.move({
         from: source,
         to: target,
-        promotion: 'q',
-        legal: true // Only allow legal moves
+        promotion: promotion, // Use the chosen promotion piece
     });
 
     if (move === null) {
@@ -76,6 +93,11 @@ function onDrop(source, target) {
 }
 
 function handleBoardClick(event) {
+    // Prevent clicking if the game is over
+    if (game.game_over()) {
+        return;
+    }
+    
     const squareElement = event.target.closest('.square-55d63');
     if (!squareElement) return;
 
@@ -120,7 +142,10 @@ function updateAfterMove(move) {
     updateCapturedPieces(move);
 
     // Update the game status
-    updateStatus();
+    updateGameStatus();
+
+    // Highlight check or checkmate
+    highlightCheckAndCheckmate();
 
     // Remove all highlights
     removeHighlights();
@@ -128,6 +153,18 @@ function updateAfterMove(move) {
     // Clear the selected square
     selectedSquare = null;
 
+    // Enable the Forfeit button after the first move
+    const forfeitButton = document.getElementById('forfeitButton');
+    if (forfeitButton && moveList.length >= 2) { // At least one move for each player
+        forfeitButton.disabled = false;
+    }
+
+    // Enable the Forfeit button after the first move
+    const offerDrawButton = document.getElementById('offerDrawButton');
+    if (offerDrawButton && moveList.length >= 2) { // At least one move for each player
+        offerDrawButton.disabled = false;
+    }
+    
     // Auto-flip board for black's turn if configured
     const autoFlipCheckbox = document.getElementById('autoFlip');
     if (game.turn() === 'b' && autoFlipCheckbox && autoFlipCheckbox.checked) {
@@ -184,51 +221,99 @@ function updateCapturedPieces(move) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Create or update captured piece display
-    const pieceType = move.captured.toLowerCase();
-    let pieceElement = container.querySelector(`.captured-${pieceType}`);
-    
-    if (!pieceElement) {
-        pieceElement = document.createElement('div');
-        pieceElement.className = `captured-piece captured-${pieceType}`;
-        pieceElement.innerHTML = `
-            <img src="/static/${capturedPieceColor}${move.captured.toUpperCase()}.png" 
-                 alt="${capturedPieceColor}${move.captured}">
-            <span class="captured-count">1</span>
-        `;
-        container.appendChild(pieceElement);
-    } else {
-        const countElement = pieceElement.querySelector('.captured-count');
-        if (countElement) {
-            const currentCount = parseInt(countElement.textContent) || 0;
-            countElement.textContent = currentCount + 1;
-        }
-    }
+    // Create a new image element for the captured piece
+    const pieceImage = document.createElement('img');
+    pieceImage.src = `/static/${capturedPieceColor}${move.captured.toUpperCase()}.png`;
+    pieceImage.alt = `${capturedPieceColor}${move.captured}`;
+    pieceImage.className = 'captured-piece';
+
+    // Append the captured piece to the container
+    container.appendChild(pieceImage);
 }
 
 function onSnapEnd() {
     board.position(game.fen());
 }
 
-function updateStatus() {
+function highlightCheckAndCheckmate() {
+    // Remove previous highlights from squares
+    document.querySelectorAll('.square-55d63').forEach(square => {
+        square.classList.remove('check', 'checkmate');
+    });
+
+    // If the game is in check or checkmate
+    if (game.in_check() || game.in_checkmate()) {
+        // Get the king's position
+        let kingPos = null;
+        const kingColor = game.turn();
+        const pieces = game.board();
+
+        // Find the king's position
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                if (pieces[i][j] && pieces[i][j].type === 'k' && pieces[i][j].color === kingColor) {
+                    kingPos = String.fromCharCode(97 + j) + (8 - i); // Convert to chess notation
+                    break;
+                }
+            }
+            if (kingPos) break;
+        }
+
+        if (kingPos) {
+            const kingSquare = document.querySelector(`.square-${kingPos}`);
+            if (kingSquare) {
+                if (game.in_checkmate()) {
+                    kingSquare.classList.add('checkmate');
+                } else if (game.in_check()) {
+                    kingSquare.classList.add('check');
+                }
+            }
+        }
+    }
+}
+
+// Function to update the game status
+function updateGameStatus() {
     const statusElement = document.getElementById('status');
     if (!statusElement) return;
 
     let status = '';
     const moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
-    if (game.in_checkmate()) {
-        status = `Checkmate! ${moveColor} loses.`;
-        statusElement.className = 'status-checkmate';
-    } else if (game.in_draw()) {
-        status = 'Game drawn!';
-        statusElement.className = 'status-draw';
+    if (game.game_over()) {
+        // Check for specific game-ending conditions
+        if (game.in_checkmate()) {
+            status = `Checkmate! ${moveColor} loses.`;
+            statusElement.className = 'status-checkmate';
+            statusElement.style.backgroundColor = '#9c1313'; // Red for checkmate
+            statusElement.style.color = 'white';
+        } else if (game.in_draw()) {
+            status = 'Game drawn!';
+            statusElement.className = 'status-draw';
+            statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
+            statusElement.style.color = 'black';
+        } else {
+            status = 'Game over!';
+            statusElement.className = 'status-over';
+            statusElement.style.backgroundColor = '#6c757d'; // Gray for generic game over
+            statusElement.style.color = 'white';
+        }
     } else {
+        // Game is still active
         status = `${moveColor} to move`;
         if (game.in_check()) {
             status += ` (in check)`;
             statusElement.className = 'status-check';
+            statusElement.style.backgroundColor = '#ffcccb'; // Light red for check
+            statusElement.style.color = 'black';
         } else {
+            if (game.turn() === 'w') {
+                statusElement.style.backgroundColor = 'white'; // White's turn
+                statusElement.style.color = 'black';
+            } else {
+                statusElement.style.backgroundColor = 'black'; // Black's turn
+                statusElement.style.color = 'white';
+            }
             statusElement.className = game.turn() === 'w' ? 'status-white' : 'status-black';
         }
     }
@@ -238,7 +323,7 @@ function updateStatus() {
 
 function flipBoard() {
     board.flip();
-    updateStatus();
+    updateGameStatus();
 }
 
 function updatePlayerNames() {
@@ -261,12 +346,12 @@ function handleMouseoverSquare(square) {
 
     if (isValidMove) {
         squareElement.classList.add('hover-highlight');
-        
-        // Preview the move (optional)
+
+        // Preview the move (full size, centered)
         const piece = game.get(selectedSquare);
         if (piece) {
             squareElement.innerHTML = `
-                <div class="move-preview" style="opacity:0.5">
+                <div class="move-preview">
                     <img src="/static/${piece.color}${piece.type.toUpperCase()}.png" 
                          alt="${piece.color}${piece.type}">
                 </div>
@@ -283,6 +368,92 @@ function handleMouseoutSquare(square) {
         const preview = squareElement.querySelector('.move-preview');
         if (preview) preview.remove();
     }
+}
+
+function handleOfferDraw() {
+    if (game.game_over()) {
+        return; // Don't allow draw if the game is already over
+    }
+
+    const confirmAcceptDraw = confirm('Your opponent has offered a draw. Do you accept?');
+    if (!confirmAcceptDraw) {
+        alert('Draw offer declined.');
+        return; // Opponent declined the draw
+    }
+
+    // Update the game state to reflect the draw
+    game.header('Result', '1/2-1/2');
+    game.header('Termination', 'Draw by agreement');
+
+    // Explicitly mark the game as over
+    game.game_over = () => true; // Override the `game_over` method to always return true
+
+    // Update the game status
+    const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.textContent = 'Game drawn by agreement!';
+        statusElement.className = 'status-draw';
+        statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
+        statusElement.style.color = 'black';
+    }
+
+    // Disable all interactions on the board
+    board = Chessboard('myBoard', {
+        ...config,
+        draggable: false, // Disable dragging
+        position: game.fen() // Keep the current board position
+    });
+
+    // Disable buttons
+    document.getElementById('forfeitButton').disabled = true;
+    document.getElementById('offerDrawButton').disabled = true;
+}
+
+function handleForfeitGame() {
+
+    if (game.game_over()) {
+        return; // Don't allow forfeit if the game is already over
+    }
+
+    const confirmForfeit = confirm('Are you sure you want to forfeit the game?');
+    if (!confirmForfeit) {
+        return;
+    }
+
+    const moveColor = game.turn() === 'w' ? 'White' : 'Black';
+    const opponentColor = moveColor === 'White' ? 'Black' : 'White';
+
+
+    // Add forfeit to move history
+    const moveNumber = Math.ceil(moveList.length / 2);
+    moveList.push(`${moveNumber}. ${moveColor} forfeits`);
+    updateMoveListDisplay();
+
+    // End the game
+    game.header('Result', opponentColor === 'White' ? '1-0' : '0-1');
+    game.header('Termination', `${moveColor.toLowerCase()} forfeits`);
+
+    // Explicitly mark the game as over
+    game.game_over = () => true; // Override the `game_over` method to always return true
+
+    // Update the game status
+    const statusElement = document.getElementById('status');
+    if (statusElement) {
+        statusElement.textContent = `${opponentColor} wins by forfeit!`;
+        statusElement.className = 'status-forfeit';
+        statusElement.style.backgroundColor = '#ffcc00'; // Yellow for forfeit
+    }
+
+    // Disable all interactions on the board
+    board = Chessboard('myBoard', {
+        ...config,
+        draggable: false, // Disable dragging
+        position: game.fen() // Keep the current board position
+    });
+
+    // Disable buttons
+    document.getElementById('forfeitButton').disabled = true;
+    document.getElementById('offerDrawButton').disabled = true;
 }
 
 const config = {
@@ -315,6 +486,16 @@ document.addEventListener('DOMContentLoaded', () => {
         flipBoardButton.addEventListener('click', flipBoard);
     }
 
+    const forfeitButton = document.getElementById('forfeitButton');
+    if (forfeitButton) {
+        forfeitButton.addEventListener('click', handleForfeitGame);
+    }
+
+    const offerDrawButton = document.getElementById('offerDrawButton');
+    if (offerDrawButton) {
+        offerDrawButton.addEventListener('click', handleOfferDraw);
+    }
+    
     const whitePlayerInput = document.getElementById('whitePlayerName');
     const blackPlayerInput = document.getElementById('blackPlayerName');
 
@@ -329,5 +510,5 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayerNames();
     });
 
-    updateStatus();
+    updateGameStatus();
 });

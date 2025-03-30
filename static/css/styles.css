@@ -98,7 +98,30 @@ body {
 }
 
 .selected-square {
-    background-color: rgba(0, 119, 0, 0.637) !important;
+    background-color: rgba(1, 109, 1, 0.637) !important;
+}
+
+/* Highlight for valid moves */
+.hover-highlight {
+    background-color: rgba(2, 105, 2, 0.3); 
+}
+
+/* Move preview styling */
+.move-preview {
+    position: relative;
+    width: 100%; /* Full size of the square */
+    height: 100%; /* Full size of the square */
+    display: flex;
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    pointer-events: none; /* Prevent interaction with the preview */
+}
+
+.move-preview img {
+    width: 100%; /* Full size of the square */
+    height: 100%; /* Full size of the square */
+    object-fit: contain; /* Ensure the image scales proportionally */
+    opacity: 0.5; /* Slightly translucent */
 }
 
 /* Game Info Panel */
@@ -167,10 +190,38 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+/* Captured pieces container */
+#white-captured, #black-captured {
+    display: flex;
+    flex-wrap: wrap; /* Allow pieces to wrap to the next line if needed */
+    gap: 5px; /* Add spacing between pieces */
+    padding: 5px;
+    justify-content: center; /* Center the pieces in the container */
+}
+
+/* Captured piece styling */
 .captured-piece {
-    width: 24px;
+    width: 24px; /* Set the size of the container */
     height: 24px;
-    object-fit: contain;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Captured piece image */
+.captured-piece img {
+    width: 100%; /* Make the image fit the container */
+    height: 100%; /* Ensure the image scales proportionally */
+    object-fit: contain; /* Ensure the image fits within the container without distortion */
+}
+
+/* Captured piece count */
+.captured-count {
+    font-size: 10px; /* Smaller font size for the count */
+    color: #333; /* Darker text color */
+    margin-top: 2px; /* Add spacing between the piece and the count */
 }
 
 /* Move Table */
