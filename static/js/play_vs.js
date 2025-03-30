@@ -2,129 +2,206 @@ let board = null;
 const game = new Chess();
 const moveList = [];
 let capturedPieces = { white: [], black: [] };
+let selectedSquare = null;
 
 function onDragStart(source, piece, position, orientation) {
-    // Only pick up pieces for the side to move
     if (game.game_over()) return false;
+
+    // Only allow dragging pieces for the side to move
     if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
         (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
         return false;
     }
+
+    // Toggle selection if clicking the same piece
+    if (selectedSquare === source) {
+        removeHighlights();
+        selectedSquare = null;
+        return false;
+    }
+
+    handlePieceSelection(source, piece);
+    return true;
+}
+
+function handlePieceSelection(source, piece) {
+    // Clear previous selection
+    removeHighlights();
+
+    // Highlight new selection
+    const squareElement = document.querySelector(`.square-${source}`);
+    if (squareElement) {
+        squareElement.classList.add('selected-square');
+    }
+
+    // Highlight legal moves
+    const legalMoves = game.moves({ square: source, verbose: true });
+    legalMoves.forEach(move => {
+        const square = document.querySelector(`.square-${move.to}`);
+        if (square) {
+            square.classList.add('valid-move');
+            // Add custom data attribute for move details
+            square.dataset.moveFrom = source;
+            square.dataset.moveTo = move.to;
+        }
+    });
+
+    selectedSquare = source;
 }
 
 function onDrop(source, target) {
-    // Check if the move is a pawn promotion
-    const isPawnPromotion = (source[1] === '7' && target[1] === '8' && game.turn() === 'w') ||
-                            (source[1] === '2' && target[1] === '1' && game.turn() === 'b');
-
-    let promotionPiece = 'q'; // Default promotion to queen
-
-    if (isPawnPromotion) {
-        // Prompt the player to choose a promotion piece
-        const validPromotions = ['q', 'r', 'b', 'n']; // Queen, Rook, Bishop, Knight
-        let choice = prompt(
-            "Promote pawn to (q = Queen, r = Rook, b = Bishop, n = Knight):",
-            "q"
-        );
-
-        // Validate the player's choice
-        if (choice && validPromotions.includes(choice.toLowerCase())) {
-            promotionPiece = choice.toLowerCase();
-        } else {
-            alert("Invalid choice! Defaulting to Queen.");
-        }
+    if (source === target) {
+        return;
     }
 
+    // Try to make the move
     const move = game.move({
         from: source,
         to: target,
-        promotion: promotionPiece // Use the selected promotion piece
+        promotion: 'q',
+        legal: true // Only allow legal moves
     });
 
-    if (move === null) return 'snapback'; // Illegal move
+    if (move === null) {
+        // If move is invalid, select the target square if it's our piece
+        const piece = game.get(target);
+        if (piece && piece.color === game.turn()) {
+            handlePieceSelection(target, piece.type);
+        }
+        return 'snapback';
+    }
 
+    // Successful move
+    updateAfterMove(move);
+}
+
+function handleBoardClick(event) {
+    const squareElement = event.target.closest('.square-55d63');
+    if (!squareElement) return;
+
+    const square = squareElement.getAttribute('data-square');
+    if (!square) return;
+
+    const piece = game.get(square);
+
+    // If we have a selected square, attempt to move
+    if (selectedSquare) {
+        const move = game.move({
+            from: selectedSquare,
+            to: square,
+            promotion: 'q'
+        });
+
+        if (move === null) {
+            // If invalid move but clicked our own piece, select it
+            if (piece && piece.color === game.turn()) {
+                handlePieceSelection(square, piece.type);
+            }
+            return;
+        }
+
+        updateAfterMove(move);
+    } else {
+        // Select the piece if it's our turn
+        if (piece && piece.color === game.turn()) {
+            handlePieceSelection(square, piece.type);
+        }
+    }
+}
+
+function updateAfterMove(move) {
+    // Update the board position
     board.position(game.fen());
-    addMoveToList(move); // Add the move to the move list
-    updateCapturedPieces(move); // Update captured pieces
-    updateStatus(); // Update the game status
+
+    // Update the move list
+    addMoveToList(move);
+
+    // Update captured pieces
+    updateCapturedPieces(move);
+
+    // Update the game status
+    updateStatus();
+
+    // Remove all highlights
+    removeHighlights();
+
+    // Clear the selected square
+    selectedSquare = null;
+
+    // Auto-flip board for black's turn if configured
+    const autoFlipCheckbox = document.getElementById('autoFlip');
+    if (game.turn() === 'b' && autoFlipCheckbox && autoFlipCheckbox.checked) {
+        board.flip();
+    }
+}
+
+function removeHighlights() {
+    document.querySelectorAll('.valid-move, .selected-square, .hover-highlight').forEach(el => {
+        el.classList.remove('valid-move', 'selected-square', 'hover-highlight');
+    });
+}
+
+// Improved move list display with scroll to bottom
+function updateMoveListDisplay() {
+    const moveListElement = document.getElementById('move-list-body');
+    if (!moveListElement) return;
+
+    moveListElement.innerHTML = '';
+
+    let currentRow = null;
+    moveList.forEach((move, index) => {
+        if (index % 2 === 0) {
+            // White move (even index)
+            currentRow = document.createElement('tr');
+            currentRow.innerHTML = `
+                <td>${Math.floor(index / 2) + 1}</td> <!-- Move number -->
+                <td>${move.replace(/^\d+\.\s*/, '')}</td> <!-- White move without move number -->
+                <td></td> <!-- Placeholder for black move -->
+            `;
+            moveListElement.appendChild(currentRow);
+        } else if (currentRow) {
+            // Black move (odd index)
+            currentRow.children[2].textContent = move;
+        }
+    });
+
+    // Scroll to bottom of move list
+    moveListElement.parentElement.scrollTop = moveListElement.parentElement.scrollHeight;
 }
 
 function addMoveToList(move) {
-    // Determine move number
     const moveNumber = Math.ceil(moveList.length / 2) + 1;
-
-    // Create move notation
     const moveNotation = `${move.color === 'w' ? moveNumber + '. ' : ''}${move.san}`;
-
-    // Add to move list array
     moveList.push(moveNotation);
-
-    // Update move list display
     updateMoveListDisplay();
 }
 
-function updateMoveListDisplay() {
-    const moveListElement = document.getElementById('move-list-body');
-
-    // Ensure the element exists
-    if (!moveListElement) {
-        console.error('Element with ID "move-list-body" not found.');
-        return;
-    }
-
-    // Clear existing list
-    moveListElement.innerHTML = '';
-
-    // Recreate list from moveList array
-    moveList.forEach((move, index) => {
-        const moveNumber = Math.floor(index / 2) + 1; // Calculate move number
-        const isWhiteMove = index % 2 === 0;
-
-        // Create a new row for every pair of moves
-        if (isWhiteMove) {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${moveNumber}</td>
-                <td>${move}</td>
-                <td></td>
-            `;
-            moveListElement.appendChild(row);
-        } else {
-            // Update the black move in the last row
-            const lastRow = moveListElement.lastElementChild;
-            if (lastRow) {
-                lastRow.children[2].textContent = move;
-            }
-        }
-    });
-}
-
 function updateCapturedPieces(move) {
-    const whiteCapturedElement = document.getElementById('black-captured');
-    const blackCapturedElement = document.getElementById('white-captured');
+    if (!move.captured) return;
 
-    // Ensure the elements exist
-    if (!whiteCapturedElement || !blackCapturedElement) {
-        console.error('Captured pieces elements not found.');
-        return;
-    }
+    const capturedPieceColor = move.color === 'w' ? 'b' : 'w';
+    const containerId = move.color === 'w' ? 'black-captured' : 'white-captured';
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-    // Check if a piece was captured
-    if (move.captured) {
-        const capturedPieceColor = move.color === 'w' ? 'b' : 'w'; // Opponent's color
-        const capturedPieceType = move.captured; // Type of the captured piece
-
-        // Construct the image path with the correct format (e.g., bP, wN)
-        const capturedPieceImage = document.createElement('img');
-        capturedPieceImage.src = `/static/${capturedPieceColor}${capturedPieceType.toUpperCase()}.png`; // First letter lowercase, second uppercase
-        capturedPieceImage.alt = `${capturedPieceColor}${capturedPieceType}`;
-        capturedPieceImage.className = 'captured-piece';
-
-        // Add the captured piece to the appropriate section
-        if (move.color === 'w') {
-            whiteCapturedElement.appendChild(capturedPieceImage); // Black's captured pieces
-        } else {
-            blackCapturedElement.appendChild(capturedPieceImage); // White's captured pieces
+    // Create or update captured piece display
+    const pieceType = move.captured.toLowerCase();
+    let pieceElement = container.querySelector(`.captured-${pieceType}`);
+    
+    if (!pieceElement) {
+        pieceElement = document.createElement('div');
+        pieceElement.className = `captured-piece captured-${pieceType}`;
+        pieceElement.innerHTML = `
+            <img src="/static/${capturedPieceColor}${move.captured.toUpperCase()}.png" 
+                 alt="${capturedPieceColor}${move.captured}">
+            <span class="captured-count">1</span>
+        `;
+        container.appendChild(pieceElement);
+    } else {
+        const countElement = pieceElement.querySelector('.captured-count');
+        if (countElement) {
+            const currentCount = parseInt(countElement.textContent) || 0;
+            countElement.textContent = currentCount + 1;
         }
     }
 }
@@ -138,51 +215,30 @@ function updateStatus() {
     if (!statusElement) return;
 
     let status = '';
-    let moveColor = 'White';
-    if (game.turn() === 'b') {
-        moveColor = 'Black';
-    }
+    const moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
-    // Checkmate?
     if (game.in_checkmate()) {
-        status = `Game over, ${moveColor} is in checkmate.`;
-        statusElement.style.backgroundColor = '#9c1313'; // Red background for checkmate
-        statusElement.style.color = '#ffffff'; // White text
-    }
-    // Draw?
-    else if (game.in_draw()) {
-        status = 'Game over, drawn position.';
-        statusElement.style.backgroundColor = '#f0f4f8'; // Neutral light gray background
-        statusElement.style.color = '#000000'; // Black text
-    }
-    // Game still on
-    else {
+        status = `Checkmate! ${moveColor} loses.`;
+        statusElement.className = 'status-checkmate';
+    } else if (game.in_draw()) {
+        status = 'Game drawn!';
+        statusElement.className = 'status-draw';
+    } else {
         status = `${moveColor} to move`;
-
-        // Check?
         if (game.in_check()) {
-            status += `, ${moveColor} is in check.`;
-            statusElement.style.backgroundColor = '#ffe08a'; // Yellow background for check
-            statusElement.style.color = '#000000'; // Black text
+            status += ` (in check)`;
+            statusElement.className = 'status-check';
         } else {
-            // Normal turn
-            if (game.turn() === 'w') {
-                statusElement.style.backgroundColor = '#ffffff'; // White background for White's turn
-                statusElement.style.color = '#000000'; // Black text
-            } else {
-                statusElement.style.backgroundColor = '#000000'; // Black background for Black's turn
-                statusElement.style.color = '#ffffff'; // White text
-            }
+            statusElement.className = game.turn() === 'w' ? 'status-white' : 'status-black';
         }
     }
 
-    // Update the status text
     statusElement.textContent = status;
 }
 
 function flipBoard() {
     board.flip();
-    updateStatus(); // Update the game status
+    updateStatus();
 }
 
 function updatePlayerNames() {
@@ -191,43 +247,42 @@ function updatePlayerNames() {
 
     const whitePlayerName = whitePlayerInput.value.trim() || 'Player 1';
     const blackPlayerName = blackPlayerInput.value.trim() || 'Player 2';
-
-    // Update the player info display (if needed elsewhere in the UI)
-    console.log(`White Player: ${whitePlayerName}, Black Player: ${blackPlayerName}`);
 }
 
-function forfeitGame() {
-    const moveColor = game.turn() === 'w' ? 'White' : 'Black';
-    alert(`${moveColor} has forfeited the game!`);
-    resetGame(); // Reset the game after forfeit
-}
+function handleMouseoverSquare(square) {
+    if (!selectedSquare) return;
 
-function offerDraw() {
-    const offer = confirm('Do you want to offer a draw?');
-    if (offer) {
-        alert('The game is a draw!');
-        resetGame(); // Reset the game after a draw
+    const squareElement = document.querySelector(`.square-${square}`);
+    if (!squareElement) return;
+
+    // Check if this is a valid move from the selected square
+    const legalMoves = game.moves({ square: selectedSquare, verbose: true });
+    const isValidMove = legalMoves.some(move => move.to === square);
+
+    if (isValidMove) {
+        squareElement.classList.add('hover-highlight');
+        
+        // Preview the move (optional)
+        const piece = game.get(selectedSquare);
+        if (piece) {
+            squareElement.innerHTML = `
+                <div class="move-preview" style="opacity:0.5">
+                    <img src="/static/${piece.color}${piece.type.toUpperCase()}.png" 
+                         alt="${piece.color}${piece.type}">
+                </div>
+            `;
+        }
     }
 }
 
-function resetGame() {
-    game.reset();
-    board.position('start');
-    updateStatus();
-    clearCapturedPieces();
-    clearMoveList();
-}
-
-function clearCapturedPieces() {
-    const whiteCapturedElement = document.getElementById('black-captured');
-    const blackCapturedElement = document.getElementById('white-captured');
-    if (whiteCapturedElement) whiteCapturedElement.innerHTML = '';
-    if (blackCapturedElement) blackCapturedElement.innerHTML = '';
-}
-
-function clearMoveList() {
-    const moveListElement = document.getElementById('move-list-body');
-    if (moveListElement) moveListElement.innerHTML = '';
+function handleMouseoutSquare(square) {
+    const squareElement = document.querySelector(`.square-${square}`);
+    if (squareElement) {
+        squareElement.classList.remove('hover-highlight');
+        // Remove any move preview
+        const preview = squareElement.querySelector('.move-preview');
+        if (preview) preview.remove();
+    }
 }
 
 const config = {
@@ -238,39 +293,34 @@ const config = {
     onSnapEnd: onSnapEnd,
     pieceTheme: function(piece) {
         return `/static/${piece}.png`;
+    },
+    onMouseoverSquare: function(square) {
+        handleMouseoverSquare(square);
+    },
+    onMouseoutSquare: function(square) {
+        handleMouseoutSquare(square);
     }
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     board = Chessboard('myBoard', config);
 
-    // Attach event listener to the Flip Board button
+    const boardContainer = document.getElementById('myBoard');
+    if (boardContainer) {
+        boardContainer.addEventListener('click', handleBoardClick);
+    }
+
     const flipBoardButton = document.getElementById('flipBoard');
     if (flipBoardButton) {
         flipBoardButton.addEventListener('click', flipBoard);
     }
 
-    // Attach event listener to the Forfeit button
-    const forfeitButton = document.getElementById('forfeitButton');
-    if (forfeitButton) {
-        forfeitButton.addEventListener('click', forfeitGame);
-    }
-
-    // Attach event listener to the Offer Draw button
-    const offerDrawButton = document.getElementById('offerDrawButton');
-    if (offerDrawButton) {
-        offerDrawButton.addEventListener('click', offerDraw);
-    }
-
-    // Initialize player names
     const whitePlayerInput = document.getElementById('whitePlayerName');
     const blackPlayerInput = document.getElementById('blackPlayerName');
 
-    // Set default player names
     whitePlayerInput.value = 'Player 1';
     blackPlayerInput.value = 'Player 2';
 
-    // Add event listeners to update player names dynamically
     whitePlayerInput.addEventListener('input', () => {
         updatePlayerNames();
     });
@@ -279,5 +329,5 @@ document.addEventListener('DOMContentLoaded', () => {
         updatePlayerNames();
     });
 
-    updateStatus(); // Initial game status
+    updateStatus();
 });

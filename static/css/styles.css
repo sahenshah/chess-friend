@@ -83,6 +83,24 @@ body {
     transition: var(--transition);
 }
 
+/* Highlight for valid moves (green dot) */
+.square-55d63.valid-move::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px; /* Size of the dot */
+    height: 20px; /* Size of the dot */
+    background-color: rgba(0, 119, 0, 0.637); /* Green color */
+    border-radius: 50%; /* Make it a circle */
+    transform: translate(-50%, -50%); /* Center the dot */
+    pointer-events: none; /* Ensure the dot doesn't interfere with interactions */
+}
+
+.selected-square {
+    background-color: rgba(0, 119, 0, 0.637) !important;
+}
+
 /* Game Info Panel */
 .game-info {
     flex: 1; /* Allocate 25% of the space to the game info panel */
