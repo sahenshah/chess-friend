@@ -124,60 +124,6 @@ body {
     color: var(--text-light);
 }
 
-/* Move Table */
-.move-table-container {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 10px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
-}
-
-.move-table {
-    width: 100%;
-    border-collapse: collapse; /* Remove gaps between table cells */
-    font-size: 0.85em; /* Compact font size */
-}
-
-.move-table th, .move-table td {
-    padding: 4px 8px; /* Compact cell padding */
-    text-align: center;
-    border-bottom: 1px solid #eee;
-}
-
-.move-table th {
-    background-color: #f2f2f2;
-    position: sticky;
-    top: 0;
-    font-weight: 600;
-}
-
-.move-table th:first-child, .move-table td:first-child {
-    width: 50px; /* Reduce the width of the Move # column */
-    text-align: center; /* Center-align the content */
-}
-
-.move-table tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-
-.move-item {
-    cursor: pointer;
-    padding: 4px 6px; /* Compact padding for move items */
-    border-radius: 4px;
-    transition: var(--transition);
-}
-
-.move-item:hover {
-    background-color: #e6f0ff;
-}
-
-.move-item.highlighted {
-    background-color: var(--secondary-color);
-    font-weight: bold;
-}
-
 /* Captured Pieces */
 .captured-group {
     display: flex;
@@ -207,6 +153,63 @@ body {
     width: 24px;
     height: 24px;
     object-fit: contain;
+}
+
+/* Move Table */
+.move-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 10px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+}
+
+.move-table {
+    width: 100%;
+    border-collapse: collapse; /* Remove gaps between table cells */
+    font-size: 0.85em; /* Compact font size */
+}
+
+.move-table th, .move-table td {
+    padding: 4px 8px; /* Compact cell padding */
+    text-align: center;
+    border-bottom: 1px solid #eee;
+}
+
+.move-table th {
+    background-color: #f2f2f2;
+    position: sticky;
+    top: 0;
+    font-weight: 600;
+}
+
+/* Style for the "Move #" column */
+.move-table th:first-child, .move-table td:first-child {
+    background-color: #e9ecef; 
+    width: 50px; 
+    text-align: center;
+    font-weight: bold;
+}
+
+.move-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.move-item {
+    cursor: pointer;
+    padding: 4px 6px; /* Compact padding for move items */
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.move-item:hover {
+    background-color: #e6f0ff;
+}
+
+.move-item.highlighted {
+    background-color: var(--secondary-color);
+    font-weight: bold;
 }
 
 /* Game Controls */
@@ -262,6 +265,30 @@ body {
     text-align: center;
     font-weight: 500;
     box-shadow: var(--shadow-sm);
+}
+
+/* Nav-Bar */
+.navbar-brand {
+    color: #004085 !important; 
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+    color: #002752 !important;
+}
+
+.navbar-nav .nav-link.active {
+    font-weight: bold;
+    background-color: #dbe5f1;
+    border-radius: 5px;
+    color: #004085 !important;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: #f0f4f8;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Special States */
