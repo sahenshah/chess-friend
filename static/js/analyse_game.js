@@ -46,23 +46,43 @@ function highlightCheckAndCheckmate() {
 
 // Function to update the game status
 function updateGameStatus() {
-    var statusElement = document.getElementById('status');
+    const statusElement = document.getElementById('status');
     if (!statusElement) return;
 
+    let status = '';
+
     if (game.in_checkmate()) {
-        statusElement.textContent = 'Checkmate! ' + (game.turn() === 'w' ? 'Black' : 'White') + ' wins.';
-        highlightCheckAndCheckmate();
+        status = `Checkmate! ${game.turn() === 'w' ? 'Black' : 'White'} wins.`;
+        statusElement.style.backgroundColor = '#9c1313'; // Red background for checkmate
+        statusElement.style.color = '#ffffff'; // White text
     } else if (game.in_stalemate()) {
-        statusElement.textContent = 'Stalemate!';
+        status = 'Stalemate!';
+        statusElement.style.backgroundColor = '#f0f4f8'; // Neutral background
+        statusElement.style.color = '#000000'; // Black text
     } else if (game.in_draw()) {
-        statusElement.textContent = 'Draw!';
+        status = 'Draw!';
+        statusElement.style.backgroundColor = '#f0f4f8'; // Neutral background
+        statusElement.style.color = '#000000'; // Black text
     } else if (game.in_check()) {
-        statusElement.textContent = 'Check!';
-        highlightCheckAndCheckmate();
+        status = 'Check!';
+        statusElement.style.backgroundColor = '#ffe08a'; // Yellow background for check
+        statusElement.style.color = '#000000'; // Black text
     } else {
-        statusElement.textContent = (game.turn() === 'w' ? 'White' : 'Black') + ' to move';
-        highlightCheckAndCheckmate();
+        status = `${game.turn() === 'w' ? 'White' : 'Black'} to move`;
+        if (game.turn() === 'w') {
+            statusElement.style.backgroundColor = '#ffffff'; // White background
+            statusElement.style.color = '#000000'; // Black text
+        } else {
+            statusElement.style.backgroundColor = '#000000'; // Black background
+            statusElement.style.color = '#ffffff'; // White text
+        }
     }
+
+    // Update the status text
+    statusElement.textContent = status;
+
+    // Highlight check or checkmate
+    highlightCheckAndCheckmate();
 }
 
 // Update move list display

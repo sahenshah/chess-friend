@@ -21,7 +21,7 @@ def index():
 def analyseGame():
     return render_template("analyse_game.html")
 
-@app.route("/play-vs", methods=["GET", "POST"])
+@app.route("/play-vs")
 def playVs():
     return render_template("play_vs.html")
 
