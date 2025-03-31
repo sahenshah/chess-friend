@@ -279,8 +279,10 @@ body {
 }
 
 .move-item.highlighted {
-    background-color: var(--secondary-color);
-    font-weight: bold;
+    background-color: #ffe08a; /* Light yellow background */
+    font-weight: bold; /* Make the text bold */
+    border-radius: 4px; /* Add rounded corners */
+    padding: 2px 4px; /* Add some padding */
 }
 
 /* Game Controls */

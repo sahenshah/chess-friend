@@ -121,11 +121,16 @@ function highlightCurrentMove() {
         item.classList.remove('highlighted');
     });
     
-    // Highlight current move if valid
+    // Highlight the current move if valid
     if (currentMoveIndex >= 0 && currentMoveIndex < moves.length) {
         const moveItem = document.querySelector(`.move-item[data-index="${currentMoveIndex}"]`);
         if (moveItem) {
             moveItem.classList.add('highlighted');
+            // Scroll to the current move and center it in the window
+            moveItem.scrollIntoView({
+                behavior: 'smooth', // Smooth scrolling
+                block: 'center', // Center the move in the window
+            });
         }
     }
 }
@@ -215,6 +220,7 @@ function navigateToMove(targetIndex) {
     updateGameStatus();
     updateMoveList();
     updateCapturedPieces();
+    highlightCurrentMove(); // Highlight and scroll to the current move
 }
 
 function setupMoveListHandlers() {
