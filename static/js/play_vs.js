@@ -392,7 +392,7 @@ function handleMouseoverSquare(square) {
         if (piece) {
             squareElement.innerHTML = `
                 <div class="move-preview">
-                    <img src="/static/${piece.color}${piece.type.toUpperCase()}.png" 
+                    <img src="/static/img/${piece.color}${piece.type.toUpperCase()}.png" 
                          alt="${piece.color}${piece.type}">
                 </div>
             `;
