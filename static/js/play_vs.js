@@ -578,7 +578,7 @@ const config = {
     onDrop: onDrop,
     onSnapEnd: onSnapEnd,
     pieceTheme: function(piece) {
-        return `/static/${piece}.png`;
+        return `/static/img/${piece}.png`;
     },
     onMouseoverSquare: function(square) {
         handleMouseoverSquare(square);

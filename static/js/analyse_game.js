@@ -8,7 +8,7 @@ let capturedPieces = { white: [], black: [] };
 const config = {
     draggable: false, // Disable piece dragging
     position: 'start',
-    pieceTheme: piece => `/static/${piece}.png`
+    pieceTheme: piece => `/static/img/${piece}.png` // Updated path to the new location
 };
 
 // Function to highlight squares/pieces when in check or checkmate
