@@ -430,3 +430,87 @@ body {
         flex: 1 1 100%;
     }
 }
+
+/* Responsive Design for Narrow Screens */
+@media (max-width: 768px) {
+    .game-container {
+        flex-direction: column; /* Stack the board and game info vertically */
+        align-items: center; /* Center align the items */
+        gap: 20px; /* Add spacing between the stacked elements */
+        padding: 10px; /* Reduce padding for smaller screens */
+    }
+
+    .board-and-status, .game-info {
+        flex: 1 1 100%; /* Take full width */
+        max-width: 100%; /* Remove width constraints */
+    }
+
+    .game-info {
+        margin-top: 10px; /* Add spacing between the board and the panel */
+        padding: 10px; 
+    }
+
+    #myBoard {
+        max-width: 100%; /* Allow the board to scale down */
+        height: auto; /* Maintain aspect ratio */
+    }
+
+    .controls {
+        flex-direction: row; /* Stack buttons horizontally */
+        gap: 10px; /* Add spacing between buttons */
+    }
+
+    .controls button {
+        width: 100%; /* Make buttons full width */
+        padding: 10px; /* Increase padding for better touch interaction */
+    }
+
+    .move-table-container {
+        max-height: 200px; /* Reduce the height of the move list */
+        overflow-y: auto; /* Ensure scrolling works */
+    }
+
+    .move-table th, .move-table td {
+        font-size: 0.75em; /* Reduce font size for smaller screens */
+        padding: 3px 6px; /* Compact cell padding */
+    }
+
+    .captured-pieces {
+        gap: 3px; /* Reduce spacing between captured pieces */
+        padding: 5px;
+    }
+
+    .captured-piece {
+        width: 20px; /* Reduce the size of captured pieces */
+        height: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-container {
+        padding: 5px; /* Further reduce padding for very small screens */
+    }
+
+    .game-status {
+        font-size: 0.9em; /* Reduce font size for the status bar */
+        padding: 6px; /* Reduce padding */
+    }
+
+    .player-info {
+        font-size: 0.8em; /* Reduce font size for player info */
+    }
+
+    .white-player, .black-player {
+        font-size: 0.8em; /* Reduce font size for player names */
+        padding: 6px 8px; /* Adjust padding */
+    }
+
+    .move-table-container {
+        max-height: 150px; /* Further reduce the height of the move list */
+    }
+
+    .controls button {
+        font-size: 0.8em; /* Reduce button font size */
+        padding: 8px; /* Adjust padding */
+    }
+}
