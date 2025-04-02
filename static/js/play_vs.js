@@ -415,85 +415,85 @@ function handleOfferDraw() {
         return; // Don't allow draw if the game is already over
     }
 
-    const confirmAcceptDraw = confirm('Your opponent has offered a draw. Do you accept?');
-    if (!confirmAcceptDraw) {
-        alert('Draw offer declined.');
-        return; // Opponent declined the draw
-    }
+    showCustomConfirm('Accept Draw Offer?', (confirmOfferDraw) => {
+        if (!confirmOfferDraw) {
+            showCustomAlert('Draw offer declined.'); // Use custom alert
+            return; // Player declined the draw
+        }
 
-    // Update the game state to reflect the draw
-    game.header('Result', '1/2-1/2');
-    game.header('Termination', 'Draw by agreement');
+        // Update the game state to reflect the draw
+        game.header('Result', '1/2-1/2');
+        game.header('Termination', 'Draw by agreement');
 
-    // Explicitly mark the game as over
-    game.game_over = () => true; // Override the `game_over` method to always return true
+        // Explicitly mark the game as over
+        game.game_over = () => true; // Override the `game_over` method to always return true
 
-    // Update the game status
-    const statusElement = document.getElementById('status');
-    if (statusElement) {
-        statusElement.textContent = 'Game drawn by agreement!';
-        statusElement.className = 'status-draw';
-        statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
-        statusElement.style.color = 'black';
-    }
+        // Update the game status
+        const statusElement = document.getElementById('status');
+        if (statusElement) {
+            statusElement.textContent = 'Game drawn by agreement!';
+            statusElement.className = 'status-draw';
+            statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
+            statusElement.style.color = 'black';
+        }
 
-    // Disable all interactions on the board
-    board = Chessboard('myBoard', {
-        ...config,
-        draggable: false, // Disable dragging
-        position: game.fen() // Keep the current board position
+        // Disable all interactions on the board
+        board = Chessboard('myBoard', {
+            ...config,
+            draggable: false, // Disable dragging
+            position: game.fen() // Keep the current board position
+        });
+
+        // Disable buttons
+        document.getElementById('forfeitButton').disabled = true;
+        document.getElementById('offerDrawButton').disabled = true;
     });
-
-    // Disable buttons
-    document.getElementById('forfeitButton').disabled = true;
-    document.getElementById('offerDrawButton').disabled = true;
 }
 
 function handleForfeitGame() {
-
     if (game.game_over()) {
         return; // Don't allow forfeit if the game is already over
     }
 
-    const confirmForfeit = confirm('Are you sure you want to forfeit the game?');
-    if (!confirmForfeit) {
-        return;
-    }
+    showCustomConfirm('Are you sure you want to forfeit the game?', (confirmForfeit) => {
+        if (!confirmForfeit) {
+            return; // Player canceled the forfeit
+        }
 
-    const moveColor = game.turn() === 'w' ? 'White' : 'Black';
-    const opponentColor = moveColor === 'White' ? 'Black' : 'White';
+        const moveColor = game.turn() === 'w' ? 'White' : 'Black';
+        const opponentColor = moveColor === 'White' ? 'Black' : 'White';
 
+        // Add forfeit to move history
+        const moveNumber = Math.ceil(moveList.length / 2);
+        moveList.push(`${moveNumber}. ${moveColor} forfeits`);
+        updateMoveListDisplay();
 
-    // Add forfeit to move history
-    const moveNumber = Math.ceil(moveList.length / 2);
-    moveList.push(`${moveNumber}. ${moveColor} forfeits`);
-    updateMoveListDisplay();
+        // End the game
+        game.header('Result', opponentColor === 'White' ? '1-0' : '0-1');
+        game.header('Termination', `${moveColor.toLowerCase()} forfeits`);
 
-    // End the game
-    game.header('Result', opponentColor === 'White' ? '1-0' : '0-1');
-    game.header('Termination', `${moveColor.toLowerCase()} forfeits`);
+        // Explicitly mark the game as over
+        game.game_over = () => true; // Override the `game_over` method to always return true
 
-    // Explicitly mark the game as over
-    game.game_over = () => true; // Override the `game_over` method to always return true
+        // Update the game status
+        const statusElement = document.getElementById('status');
+        if (statusElement) {
+            statusElement.textContent = `${opponentColor} wins by forfeit!`;
+            statusElement.className = 'status-forfeit';
+            statusElement.style.backgroundColor = '#ffcc00'; // Yellow for forfeit
+        }
 
-    // Update the game status
-    const statusElement = document.getElementById('status');
-    if (statusElement) {
-        statusElement.textContent = `${opponentColor} wins by forfeit!`;
-        statusElement.className = 'status-forfeit';
-        statusElement.style.backgroundColor = '#ffcc00'; // Yellow for forfeit
-    }
+        // Disable all interactions on the board
+        board = Chessboard('myBoard', {
+            ...config,
+            draggable: false, // Disable dragging
+            position: game.fen() // Keep the current board position
+        });
 
-    // Disable all interactions on the board
-    board = Chessboard('myBoard', {
-        ...config,
-        draggable: false, // Disable dragging
-        position: game.fen() // Keep the current board position
+        // Disable buttons
+        document.getElementById('forfeitButton').disabled = true;
+        document.getElementById('offerDrawButton').disabled = true;
     });
-
-    // Disable buttons
-    document.getElementById('forfeitButton').disabled = true;
-    document.getElementById('offerDrawButton').disabled = true;
 }
 
 function redirectToAnalyse() {

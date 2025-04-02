@@ -51,6 +51,14 @@
             </div>
         </div>
 
+        <div id="customConfirm" class="custom-confirm hidden">
+            <div class="custom-confirm-content">
+                <p id="customConfirmMessage"></p>
+                <button id="customConfirmYes" class="custom-confirm-button">Yes</button>
+                <button id="customConfirmNo" class="custom-confirm-button">No</button>
+            </div>
+        </div>
+
         <script>
             function showCustomAlert(message) {
                 const customAlert = document.getElementById('customAlert');
@@ -67,6 +75,38 @@
                 customAlertClose.addEventListener('click', () => {
                     customAlert.classList.add('hidden');
                 });
+            }
+
+            function showCustomConfirm(message, callback) {
+                const customConfirm = document.getElementById('customConfirm');
+                const customConfirmMessage = document.getElementById('customConfirmMessage');
+                const customConfirmYes = document.getElementById('customConfirmYes');
+                const customConfirmNo = document.getElementById('customConfirmNo');
+
+                // Set the message
+                customConfirmMessage.textContent = message;
+
+                // Show the confirmation box
+                customConfirm.classList.remove('hidden');
+
+                // Handle "Yes" button click
+                const handleYes = () => {
+                    customConfirm.classList.add('hidden');
+                    callback(true); // Call the callback with "true"
+                    customConfirmYes.removeEventListener('click', handleYes);
+                    customConfirmNo.removeEventListener('click', handleNo);
+                };
+
+                // Handle "No" button click
+                const handleNo = () => {
+                    customConfirm.classList.add('hidden');
+                    callback(false); // Call the callback with "false"
+                    customConfirmYes.removeEventListener('click', handleYes);
+                    customConfirmNo.removeEventListener('click', handleNo);
+                };
+
+                customConfirmYes.addEventListener('click', handleYes);
+                customConfirmNo.addEventListener('click', handleNo);
             }
         </script>
 
