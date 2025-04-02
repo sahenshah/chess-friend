@@ -105,20 +105,6 @@
 
     <script src="{{ url_for('static', filename='js/analyse_game.js') }}"></script>
     
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedPGN = localStorage.getItem('savedPGN');
-            if (savedPGN) {
-                if (!game.load_pgn(savedPGN)) {
-                    alert('Failed to load saved PGN!');
-                } else {
-                    alert('Loaded saved PGN from localStorage!');
-                    board.position(game.fen());
-                }
-            }
-        });
-    </script>
-    
     {% endblock %}
 
 </body>

@@ -524,7 +524,10 @@ function handleAnalyseButtonClick() {
     // Save the PGN to localStorage
     localStorage.setItem('savedPGN', pgn);
 
-    // redirect to the Analyse Game page
+    // Reset the chessGameState in localStorage
+    localStorage.removeItem('chessGameState');
+
+    // Redirect to the Analyse Game page
     window.location.href = "/analyse-game"; // Ensure this matches your Flask route
 }
 

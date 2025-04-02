@@ -44,6 +44,32 @@
             {% block main %}{% endblock %}
         </main>
 
+        <div id="customAlert" class="custom-alert hidden">
+            <div class="custom-alert-content">
+                <p id="customAlertMessage"></p>
+                <button id="customAlertClose" class="custom-alert-close">OK</button>
+            </div>
+        </div>
+
+        <script>
+            function showCustomAlert(message) {
+                const customAlert = document.getElementById('customAlert');
+                const customAlertMessage = document.getElementById('customAlertMessage');
+                const customAlertClose = document.getElementById('customAlertClose');
+
+                // Set the message
+                customAlertMessage.textContent = message;
+
+                // Show the alert box
+                customAlert.classList.remove('hidden');
+
+                // Close the alert box when the "OK" button is clicked
+                customAlertClose.addEventListener('click', () => {
+                    customAlert.classList.add('hidden');
+                });
+            }
+        </script>
+
     </body>
 
 </html>

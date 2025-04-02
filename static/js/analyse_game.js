@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (savedPGN) {
         if (!game.load_pgn(savedPGN)) {
-            alert('Failed to load saved PGN!');
+            showCustomAlert('Failed to load local game!');
         } else {
             // Hide the upload section and show the player info
             uploadSection.style.display = 'none';
