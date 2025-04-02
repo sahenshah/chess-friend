@@ -244,41 +244,111 @@ document.addEventListener('DOMContentLoaded', () => {
     board = Chessboard('myBoard', config);
     setupMoveListHandlers();
 
-    // Get DOM elements safely
-    const flipBoardBtn = document.getElementById('flipBoard');
-    const pgnUpload = document.getElementById('pgnUpload');
-    const nextMoveBtn = document.getElementById('nextMove');
-    const prevMoveBtn = document.getElementById('prevMove');
-    const moveListBtn = document.getElementById('move-list-container');
-    // Only add event listeners if elements exist
-    if (flipBoardBtn) {
-        flipBoardBtn.addEventListener('click', flipChessBoard);
+    const savedPGN = localStorage.getItem('savedPGN');
+    const uploadSection = document.getElementById('uploadSection');
+    const playerInfo = document.getElementById('playerInfo');
+    const whitePlayerName = document.getElementById('whitePlayerName');
+    const blackPlayerName = document.getElementById('blackPlayerName');
+    const eventDate = document.getElementById('eventDate');
+    const analyseNewGameButton = document.getElementById('analyseNewGameButton');
+
+    if (savedPGN) {
+        if (!game.load_pgn(savedPGN)) {
+            alert('Failed to load saved PGN!');
+        } else {
+            // Hide the upload section and show the player info
+            uploadSection.style.display = 'none';
+            playerInfo.style.display = 'block';
+
+            // Extract headers from the PGN
+            const headers = game.header();
+            whitePlayerName.textContent = headers.White || 'Unknown';
+            blackPlayerName.textContent = headers.Black || 'Unknown';
+            eventDate.textContent = headers.EventDate || 'Unknown';
+
+            // Update the board position
+            board.position(game.fen());
+
+            // Extract moves and update the move list
+            moves = game.history(); // Get the list of moves from the PGN
+            updateMoveList(); // Populate the move list in the UI
+        }
     }
-    
+
+    // Handle "Analyse New Game" button click
+    if (analyseNewGameButton) {
+        analyseNewGameButton.addEventListener('click', () => {
+            // Reset the game
+            game.reset();
+            board.start();
+            moves = [];
+            currentMoveIndex = -1;
+
+            // Clear the move list
+            updateMoveList();
+
+            // Clear player info
+            whitePlayerName.textContent = '';
+            blackPlayerName.textContent = '';
+            eventDate.textContent = '';
+
+            // Show the upload section and hide the player info
+            uploadSection.style.display = 'block';
+            playerInfo.style.display = 'none';
+
+            // Clear saved PGN from localStorage
+            localStorage.removeItem('savedPGN');
+        });
+    }
+
+    // Handle PGN upload
+    const pgnUpload = document.getElementById('pgnUpload');
     if (pgnUpload) {
-        pgnUpload.addEventListener('change', function(event) {
+        pgnUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
             if (!file) return;
-            
+
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 const pgn = e.target.result.trim();
                 if (!game.load_pgn(pgn)) {
-                    alert("Invalid PGN file! Please upload a valid PGN.");
-                    return;
+                    alert('Invalid PGN file!');
+                } else {
+                    // Save the PGN to localStorage
+                    localStorage.setItem('savedPGN', pgn);
+
+                    // Hide the upload section and show the player info
+                    uploadSection.style.display = 'none';
+                    playerInfo.style.display = 'block';
+
+                    // Extract headers from the PGN
+                    const headers = game.header();
+                    whitePlayerName.textContent = headers.White || 'Unknown';
+                    blackPlayerName.textContent = headers.Black || 'Unknown';
+                    eventDate.textContent = headers.EventDate || 'Unknown';
+
+                    // Update the board position
+                    board.position(game.fen());
+
+                    // Extract moves and update the move list
+                    moves = game.history(); // Get the list of moves from the PGN
+                    updateMoveList(); // Populate the move list in the UI
                 }
-                
-                const pgnHeader = game.header();
-                displayPlayerInfo(pgnHeader);
-                moves = game.history();
-                
-                // Reset to beginning
-                navigateToMove(-1);
             };
             reader.readAsText(file);
         });
     }
 
+    const flipBoardBtn = document.getElementById('flipBoard');
+    const nextMoveBtn = document.getElementById('nextMove');
+    const prevMoveBtn = document.getElementById('prevMove');
+    const moveListBtn = document.getElementById('move-list-container');
+    
+    // Only add event listeners if elements exist
+    if (flipBoardBtn) {
+        flipBoardBtn.addEventListener('click', flipChessBoard);
+    }
+    
     if (nextMoveBtn) {
         nextMoveBtn.addEventListener('click', () => {
             navigateToMove(currentMoveIndex + 1);
@@ -293,5 +363,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(moveListBtn){
         moveListBtn.addEventListener('click', handleMoveClick);
+    }
+
+    // Handle PGN selection from the list
+    const pgnList = document.getElementById('pgn-list');
+    if (pgnList) {
+        pgnList.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default link behavior
+
+            const target = event.target;
+            if (target.tagName === 'A' && target.dataset.pgn) {
+                const selectedPGN = target.dataset.pgn.trim();
+
+                // Fetch the PGN content from the server
+                fetch(`/static/pgns/${selectedPGN}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to fetch PGN file');
+                        }
+                        return response.text();
+                    })
+                    .then(pgnContent => {
+                        // Save the PGN content to localStorage
+                        localStorage.setItem('savedPGN', pgnContent);
+
+                        // Redirect to the Analyse Game page
+                        window.location.href = "/analyse-game";
+                    })
+                    .catch(error => {
+                        console.error('Error fetching PGN file:', error);
+                        alert('Failed to load PGN file.');
+                    });
+            }
+        });
     }
 });

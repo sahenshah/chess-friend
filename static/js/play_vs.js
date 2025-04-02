@@ -159,7 +159,7 @@ function updateAfterMove(move) {
         forfeitButton.disabled = false;
     }
 
-    // Enable the Forfeit button after the first move
+    // Enable the Offer Draw button after the first move
     const offerDrawButton = document.getElementById('offerDrawButton');
     if (offerDrawButton && moveList.length >= 2) { // At least one move for each player
         offerDrawButton.disabled = false;
@@ -170,6 +170,9 @@ function updateAfterMove(move) {
     if (game.turn() === 'b' && autoFlipCheckbox && autoFlipCheckbox.checked) {
         board.flip();
     }
+
+    // Save the game state
+    saveGameState();
 }
 
 function removeHighlights() {
@@ -203,6 +206,43 @@ function updateMoveListDisplay() {
     });
 
     // Scroll to bottom of move list
+    moveListElement.parentElement.scrollTop = moveListElement.parentElement.scrollHeight;
+}
+
+function updateMoveList() {
+    const moveListElement = document.getElementById('move-list-body');
+    if (!moveListElement) return;
+
+    // Clear the current move list
+    moveListElement.innerHTML = '';
+
+    // Get the move history from the game
+    const moves = game.history({ verbose: true });
+
+    // Populate the move list
+    moves.forEach((move, index) => {
+        const moveNumber = Math.floor(index / 2) + 1; // Calculate the move number
+        const isWhiteMove = index % 2 === 0; // Check if it's a white move
+
+        if (isWhiteMove) {
+            // Create a new row for the move
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${moveNumber}</td>
+                <td>${move.san}</td>
+                <td></td>
+            `;
+            moveListElement.appendChild(row);
+        } else {
+            // Add the black move to the last row
+            const lastRow = moveListElement.lastElementChild;
+            if (lastRow) {
+                lastRow.children[2].textContent = move.san;
+            }
+        }
+    });
+
+    // Scroll to the bottom of the move list
     moveListElement.parentElement.scrollTop = moveListElement.parentElement.scrollHeight;
 }
 
@@ -456,6 +496,78 @@ function handleForfeitGame() {
     document.getElementById('offerDrawButton').disabled = true;
 }
 
+function redirectToAnalyse() {
+    // Redirect to the Analyse Game page
+    window.location.href = "/analyse-game"; // Ensure this matches your Flask route
+}
+
+function handleAnalyseButtonClick() {
+    // Generate the PGN from the current game state
+    let pgn = game.pgn({ maxWidth: 80, newline: '\n' }); // Ensure moves are included
+
+    // Get the player names from the input fields
+    const whitePlayerInput = document.getElementById('whitePlayerName').value.trim() || 'White';
+    const blackPlayerInput = document.getElementById('blackPlayerName').value.trim() || 'Black';
+
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date();
+    const date = today.toISOString().split('T')[0]; // Extract the date part
+
+    // Prepend the headers to the PGN
+    const headers = [
+        `[EventDate "${date}"]`,
+        `[White "${whitePlayerInput}"]`,
+        `[Black "${blackPlayerInput}"]`
+    ];
+    pgn = headers.join('\n') + '\n\n' + pgn; // Add headers and a blank line before the moves
+
+    // Save the PGN to localStorage
+    localStorage.setItem('savedPGN', pgn);
+
+    // redirect to the Analyse Game page
+    window.location.href = "/analyse-game"; // Ensure this matches your Flask route
+}
+
+function saveGameState() {
+    const gameState = {
+        fen: game.fen(), // Current board position
+        moves: game.history(), // Move history
+        whitePlayerName: document.getElementById('whitePlayerName').value.trim() || 'Player 1',
+        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || 'Player 2'
+    };
+    localStorage.setItem('chessGameState', JSON.stringify(gameState));
+}
+
+function loadGameState() {
+    const savedState = localStorage.getItem('chessGameState');
+    if (savedState) {
+        const gameState = JSON.parse(savedState);
+
+        // Load the FEN position
+        game.load(gameState.fen);
+        board.position(gameState.fen);
+
+        // Load the move history
+        gameState.moves.forEach(move => game.move(move));
+
+        // Update the player names
+        document.getElementById('whitePlayerName').value = gameState.whitePlayerName;
+        document.getElementById('blackPlayerName').value = gameState.blackPlayerName;
+
+        // Restore the move list
+        moveList.length = 0; // Clear the existing move list
+        gameState.moves.forEach((move, index) => {
+            const moveNumber = Math.floor(index / 2) + 1;
+            const moveNotation = `${index % 2 === 0 ? moveNumber + '. ' : ''}${move}`;
+            moveList.push(moveNotation);
+        });
+
+        // Update the UI
+        updateMoveListDisplay(); // Refresh the move list in the UI
+        updateGameStatus(); // Update the game status
+    }
+}
+
 const config = {
     draggable: true,
     position: 'start',
@@ -499,16 +611,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const whitePlayerInput = document.getElementById('whitePlayerName');
     const blackPlayerInput = document.getElementById('blackPlayerName');
 
-    whitePlayerInput.value = 'Player 1';
-    blackPlayerInput.value = 'Player 2';
-
     whitePlayerInput.addEventListener('input', () => {
         updatePlayerNames();
+        saveGameState(); // Save the updated player names
     });
 
     blackPlayerInput.addEventListener('input', () => {
         updatePlayerNames();
+        saveGameState(); // Save the updated player names
     });
+
+    const analyseButton = document.getElementById('analyseButton');
+    if (analyseButton) {
+        analyseButton.addEventListener('click', handleAnalyseButtonClick);
+    }
+
+    const newGameButton = document.getElementById('newGameButton');
+    if (newGameButton) {
+        newGameButton.addEventListener('click', () => {
+            // Reset the game
+            game.reset();
+            board.start();
+
+            // Clear the move list
+            moveList.length = 0; // Reset the move list array
+            updateMoveListDisplay(); // Update the move list in the UI
+
+            // Clear captured pieces
+            capturedPieces.white = [];
+            capturedPieces.black = [];
+            document.getElementById('white-captured').innerHTML = '';
+            document.getElementById('black-captured').innerHTML = '';
+
+            // Reset player names to default
+            document.getElementById('whitePlayerName').value = 'Player 1';
+            document.getElementById('blackPlayerName').value = 'Player 2';
+
+            // Save the reset game state
+            saveGameState();
+
+            // Update the game status
+            updateGameStatus();
+        });
+    }
+
+    // Load the saved game state
+    loadGameState();
 
     updateGameStatus();
 });

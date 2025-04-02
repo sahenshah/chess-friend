@@ -18,8 +18,11 @@ def index():
     return render_template("index.html")
 
 @app.route("/analyse-game")
-def analyseGame():
-    return render_template("analyse_game.html")
+def analyse_game():
+    # Get the list of PGN files from the static/pgns folder
+    pgn_folder = os.path.join(app.static_folder, 'pgns')
+    pgn_files = [f for f in os.listdir(pgn_folder) if f.endswith('.pgn')]
+    return render_template('analyse_game.html', pgn_files=pgn_files)
 
 @app.route("/play-vs")
 def playVs():

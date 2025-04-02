@@ -43,7 +43,18 @@
         <div class="game-info">
             <!-- PGN Upload and Player Info -->            
             <div id="uploadSection">
-                <h4>Upload PGN</h4>
+                <h6>Select PGN from list or upload</h6>
+                
+                <!-- List of PGNs -->
+                <ul id="pgn-list">
+                    {% for pgn in pgn_files %}
+                        <li>
+                            <a href="#" data-pgn="{{ pgn }}">{{ pgn }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <!-- PGN Upload -->
                 <input type="file" id="pgnUpload" accept=".pgn">
             </div>
             <div id="playerInfo" class="player-info" style="display: none;">
@@ -80,6 +91,10 @@
                         </tbody>
                     </table>
                 </div>
+                <!-- Analyse New Game Button -->
+                <div class="analyse-new-game-button-container" style="text-align: center; margin-top: 10px;">
+                    <button id="analyseNewGameButton" class="analyse-new-game-button">Analyse New Game</button>
+                </div>
             </div>
         </div>
     </div>
@@ -89,6 +104,20 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 
     <script src="{{ url_for('static', filename='js/analyse_game.js') }}"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedPGN = localStorage.getItem('savedPGN');
+            if (savedPGN) {
+                if (!game.load_pgn(savedPGN)) {
+                    alert('Failed to load saved PGN!');
+                } else {
+                    alert('Loaded saved PGN from localStorage!');
+                    board.position(game.fen());
+                }
+            }
+        });
+    </script>
     
     {% endblock %}
 
