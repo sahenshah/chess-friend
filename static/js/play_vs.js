@@ -3,10 +3,12 @@ const game = new Chess();
 const moveList = [];
 let capturedPieces = { white: [], black: [] };
 let selectedSquare = null;
+let isGameForfeited = false; // Tracks if the game was forfeited
+let isGameDrawn = false; // Tracks if the game was drawn
 
 function onDragStart(source, piece, position, orientation) {
-    // Prevent dragging if the game is over
-    if (game.game_over()) {
+    // Prevent dragging if the game is over or forfeited
+    if (game.game_over() || isGameForfeited || isGameDrawn) {
         return false;
     }
 
@@ -93,11 +95,11 @@ function onDrop(source, target) {
 }
 
 function handleBoardClick(event) {
-    // Prevent clicking if the game is over
-    if (game.game_over()) {
+    // Prevent clicking if the game is over or forfeited
+    if (game.game_over() || isGameForfeited || isGameDrawn) {
         return;
     }
-    
+
     const squareElement = event.target.closest('.square-55d63');
     if (!squareElement) return;
 
@@ -320,7 +322,17 @@ function updateGameStatus() {
     let status = '';
     const moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
-    if (game.game_over()) {
+    if (isGameForfeited) {
+        status = 'Game forfeited!';
+        statusElement.className = 'status-forfeit';
+        statusElement.style.backgroundColor = '#ffcc00'; // Yellow for forfeit
+        statusElement.style.color = 'black';
+    } else if (isGameDrawn) {
+        status = 'Game drawn by agreement!';
+        statusElement.className = 'status-draw';
+        statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
+        statusElement.style.color = 'black';
+    } else if (game.game_over()) {
         // Check for specific game-ending conditions
         if (game.in_checkmate()) {
             status = `Checkmate! ${moveColor} loses.`;
@@ -411,8 +423,8 @@ function handleMouseoutSquare(square) {
 }
 
 function handleOfferDraw() {
-    if (game.game_over()) {
-        return; // Don't allow draw if the game is already over
+    if (game.game_over() || isGameDrawn) {
+        return; // Don't allow draw if the game is already over or drawn
     }
 
     showCustomConfirm('Accept Draw Offer?', (confirmOfferDraw) => {
@@ -421,12 +433,10 @@ function handleOfferDraw() {
             return; // Player declined the draw
         }
 
-        // Update the game state to reflect the draw
-        game.header('Result', '1/2-1/2');
-        game.header('Termination', 'Draw by agreement');
+        const moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
-        // Explicitly mark the game as over
-        game.game_over = () => true; // Override the `game_over` method to always return true
+        // Mark the game as drawn
+        isGameDrawn = true;
 
         // Update the game status
         const statusElement = document.getElementById('status');
@@ -451,8 +461,8 @@ function handleOfferDraw() {
 }
 
 function handleForfeitGame() {
-    if (game.game_over()) {
-        return; // Don't allow forfeit if the game is already over
+    if (game.game_over() || isGameForfeited) {
+        return; // Don't allow forfeit if the game is already over or forfeited
     }
 
     showCustomConfirm('Are you sure you want to forfeit the game?', (confirmForfeit) => {
@@ -468,12 +478,8 @@ function handleForfeitGame() {
         moveList.push(`${moveNumber}. ${moveColor} forfeits`);
         updateMoveListDisplay();
 
-        // End the game
-        game.header('Result', opponentColor === 'White' ? '1-0' : '0-1');
-        game.header('Termination', `${moveColor.toLowerCase()} forfeits`);
-
-        // Explicitly mark the game as over
-        game.game_over = () => true; // Override the `game_over` method to always return true
+        // Mark the game as forfeited
+        isGameForfeited = true;
 
         // Update the game status
         const statusElement = document.getElementById('status');
@@ -636,6 +642,10 @@ document.addEventListener('DOMContentLoaded', () => {
             game.reset();
             board.start();
 
+            // Reset the forfeited and drawn flags
+            isGameForfeited = false;
+            isGameDrawn = false;
+
             // Clear the move list
             moveList.length = 0; // Reset the move list array
             updateMoveListDisplay(); // Update the move list in the UI
@@ -649,6 +659,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset player names to default
             document.getElementById('whitePlayerName').value = 'Player 1';
             document.getElementById('blackPlayerName').value = 'Player 2';
+
+            // Reset the selected square
+            selectedSquare = null;
+
+            // Remove all highlights
+            removeHighlights();
+
+            // Reset the board configuration
+            board = Chessboard('myBoard', config);
+
+            // Re-enable buttons
+            const forfeitButton = document.getElementById('forfeitButton');
+            if (forfeitButton) {
+                forfeitButton.disabled = false;
+            }
+
+            const offerDrawButton = document.getElementById('offerDrawButton');
+            if (offerDrawButton) {
+                offerDrawButton.disabled = false;
+            }
 
             // Save the reset game state
             saveGameState();
