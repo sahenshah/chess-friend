@@ -186,7 +186,8 @@ function updateCapturedPieces() {
     // Add captured pieces for white (pieces black captured)
     capturedPieces.white.forEach(piece => {
         const pieceImg = document.createElement('img');
-        pieceImg.src = `/static/${piece}.png`;
+        pieceImg.src = `/static/img/${piece}.png`; // Correct path for captured pieces
+        pieceImg.alt = piece; // Add alt text for accessibility
         pieceImg.className = 'captured-piece';
         whiteCaptured.appendChild(pieceImg);
     });
@@ -194,7 +195,8 @@ function updateCapturedPieces() {
     // Add captured pieces for black (pieces white captured)
     capturedPieces.black.forEach(piece => {
         const pieceImg = document.createElement('img');
-        pieceImg.src = `/static/${piece}.png`;
+        pieceImg.src = `/static/img/${piece}.png`;
+        pieceImg.alt = piece; // Add alt text for accessibility
         pieceImg.className = 'captured-piece';
         blackCaptured.appendChild(pieceImg);
     });
@@ -249,6 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playerInfo = document.getElementById('playerInfo');
     const whitePlayerName = document.getElementById('whitePlayerName');
     const blackPlayerName = document.getElementById('blackPlayerName');
+    const event = document.getElementById('event');
     const eventDate = document.getElementById('eventDate');
     const analyseNewGameButton = document.getElementById('analyseNewGameButton');
 
@@ -264,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const headers = game.header();
             whitePlayerName.textContent = headers.White || 'Unknown';
             blackPlayerName.textContent = headers.Black || 'Unknown';
+            event.textContent = headers.Event || 'Unknown'; 
             eventDate.textContent = headers.EventDate || 'Unknown';
 
             // Update the board position
