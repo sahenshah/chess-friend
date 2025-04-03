@@ -113,7 +113,7 @@ function handleBoardClick(event) {
         const move = game.move({
             from: selectedSquare,
             to: square,
-            promotion: 'q'
+            promotion: 'q' // Default promotion to queen
         });
 
         if (move === null) {
@@ -124,7 +124,16 @@ function handleBoardClick(event) {
             return;
         }
 
+        // Successful move
         updateAfterMove(move);
+
+        // Update the board position
+        board.position(game.fen());
+
+        // Clear highlights
+        removeHighlights();
+
+        selectedSquare = null; // Clear the selected square
     } else {
         // Select the piece if it's our turn
         if (piece && piece.color === game.turn()) {
@@ -146,17 +155,8 @@ function updateAfterMove(move) {
     // Update the game status
     updateGameStatus();
 
-    // Enable the Analyse and New Game buttons after the first move
-    const analyseButton = document.getElementById('analyseButton');
-    const newGameButton = document.getElementById('newGameButton');
-    if (game.history().length > 0) {
-        if (analyseButton) {
-            analyseButton.disabled = false;
-        }
-        if (newGameButton) {
-            newGameButton.disabled = false;
-        }
-    }
+    // Save the game state
+    saveGameState();
 }
 
 function removeHighlights() {
@@ -523,7 +523,7 @@ function handleAnalyseButtonClick() {
 function saveGameState() {
     const gameState = {
         fen: game.fen(), // Current board position
-        moves: game.history(), // Move history
+        moves: moveList, // Save the moves array
         whitePlayerName: document.getElementById('whitePlayerName').value.trim() || 'Player 1',
         blackPlayerName: document.getElementById('blackPlayerName').value.trim() || 'Player 2'
     };
@@ -539,20 +539,21 @@ function loadGameState() {
         game.load(gameState.fen);
         board.position(gameState.fen);
 
-        // Load the move history
-        gameState.moves.forEach(move => game.move(move));
+        // Restore the move list
+        moveList.length = 0; // Clear the existing move list
+        gameState.moves.forEach(move => moveList.push(move));
+
+        // Replay the moves to rebuild the game state
+        gameState.moves.forEach(move => {
+            const moveDetails = game.move(move.replace(/^\d+\.\s*/, '')); // Remove move numbers if present
+            if (moveDetails) {
+                updateAfterMove(moveDetails);
+            }
+        });
 
         // Update the player names
         document.getElementById('whitePlayerName').value = gameState.whitePlayerName;
         document.getElementById('blackPlayerName').value = gameState.blackPlayerName;
-
-        // Restore the move list
-        moveList.length = 0; // Clear the existing move list
-        gameState.moves.forEach((move, index) => {
-            const moveNumber = Math.floor(index / 2) + 1;
-            const moveNotation = `${index % 2 === 0 ? moveNumber + '. ' : ''}${move}`;
-            moveList.push(moveNotation);
-        });
 
         // Update the UI
         updateMoveListDisplay(); // Refresh the move list in the UI
@@ -599,7 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (offerDrawButton) {
         offerDrawButton.addEventListener('click', handleOfferDraw);
     }
-    
+
     const whitePlayerInput = document.getElementById('whitePlayerName');
     const blackPlayerInput = document.getElementById('blackPlayerName');
 
@@ -615,11 +616,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const analyseButton = document.getElementById('analyseButton');
     if (analyseButton) {
+        analyseButton.disabled = false; // Ensure the button is enabled
         analyseButton.addEventListener('click', handleAnalyseButtonClick);
     }
 
     const newGameButton = document.getElementById('newGameButton');
     if (newGameButton) {
+        newGameButton.disabled = false; // Ensure the button is enabled
         newGameButton.addEventListener('click', () => {
             // Reset the game
             game.reset();
@@ -651,17 +654,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Reset the board configuration
             board = Chessboard('myBoard', config);
-
-            // Re-enable buttons
-            const forfeitButton = document.getElementById('forfeitButton');
-            if (forfeitButton) {
-                forfeitButton.disabled = false;
-            }
-
-            const offerDrawButton = document.getElementById('offerDrawButton');
-            if (offerDrawButton) {
-                offerDrawButton.disabled = false;
-            }
 
             // Save the reset game state
             saveGameState();
