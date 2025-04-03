@@ -521,6 +521,7 @@ function handleAnalyseButtonClick() {
 
     // Prepend the headers to the PGN
     const headers = [
+        `[Event "Epic ${whitePlayerInput} vs ${blackPlayerInput} Chess Match!"]`,
         `[EventDate "${date}"]`,
         `[White "${whitePlayerInput}"]`,
         `[Black "${blackPlayerInput}"]`
