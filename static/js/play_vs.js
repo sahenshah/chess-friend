@@ -265,7 +265,7 @@ function updateCapturedPieces(move) {
 
     // Create a new image element for the captured piece
     const pieceImage = document.createElement('img');
-    pieceImage.src = `/static/${capturedPieceColor}${move.captured.toUpperCase()}.png`;
+    pieceImage.src = `/static/img/${capturedPieceColor}${move.captured.toUpperCase()}.png`;
     pieceImage.alt = `${capturedPieceColor}${move.captured}`;
     pieceImage.className = 'captured-piece';
 
