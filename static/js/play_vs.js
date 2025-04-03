@@ -134,47 +134,29 @@ function handleBoardClick(event) {
 }
 
 function updateAfterMove(move) {
-    // Update the board position
-    board.position(game.fen());
-
     // Update the move list
     addMoveToList(move);
 
     // Update captured pieces
     updateCapturedPieces(move);
 
-    // Update the game status
-    updateGameStatus();
-
     // Highlight check or checkmate
     highlightCheckAndCheckmate();
 
-    // Remove all highlights
-    removeHighlights();
+    // Update the game status
+    updateGameStatus();
 
-    // Clear the selected square
-    selectedSquare = null;
-
-    // Enable the Forfeit button after the first move
-    const forfeitButton = document.getElementById('forfeitButton');
-    if (forfeitButton && moveList.length >= 2) { // At least one move for each player
-        forfeitButton.disabled = false;
+    // Enable the Analyse and New Game buttons after the first move
+    const analyseButton = document.getElementById('analyseButton');
+    const newGameButton = document.getElementById('newGameButton');
+    if (game.history().length > 0) {
+        if (analyseButton) {
+            analyseButton.disabled = false;
+        }
+        if (newGameButton) {
+            newGameButton.disabled = false;
+        }
     }
-
-    // Enable the Offer Draw button after the first move
-    const offerDrawButton = document.getElementById('offerDrawButton');
-    if (offerDrawButton && moveList.length >= 2) { // At least one move for each player
-        offerDrawButton.disabled = false;
-    }
-    
-    // Auto-flip board for black's turn if configured
-    const autoFlipCheckbox = document.getElementById('autoFlip');
-    if (game.turn() === 'b' && autoFlipCheckbox && autoFlipCheckbox.checked) {
-        board.flip();
-    }
-
-    // Save the game state
-    saveGameState();
 }
 
 function removeHighlights() {
