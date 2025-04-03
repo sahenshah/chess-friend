@@ -636,3 +636,15 @@ body {
 .custom-confirm-button:hover {
     background-color: #0056b3;
 }
+
+/* Upload Section */
+#uploadSection h6 {
+    font-size: 14px; /* Reduce the font size of the text */
+    margin-bottom: 10px; /* Add some spacing below the text */
+}
+
+#pgnUpload {
+    font-size: 12px; /* Reduce the font size of the button text */
+    padding: 5px 10px; /* Adjust padding for a smaller button */
+    width: auto; /* Ensure the button width adjusts to its content */
+}
