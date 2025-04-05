@@ -3,18 +3,29 @@ const game = new Chess();
 const moveList = [];
 let capturedPieces = { white: [], black: [] };
 let selectedSquare = null;
+let isGameStarted = false; // Tracks if the game was started
 let isGameForfeited = false; // Tracks if the game was forfeited
 let isGameDrawn = false; // Tracks if the game was drawn
 
 function onDragStart(source, piece, position, orientation) {
-    // Prevent dragging if the game is over or forfeited
-    if (game.game_over() || isGameForfeited || isGameDrawn) {
+    // Prevent dragging if the game hasn't started, is over, or forfeited
+    if (!isGameStarted || game.game_over() || isGameForfeited || isGameDrawn) {
+        return false;
+    }
+
+    // Get the player's color from localStorage
+    const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
+    const playerColor = aiSettings ? aiSettings.playerColor : 'white';
+
+    // Prevent dragging pieces of the computer's color
+    if ((playerColor === 'white' && piece.startsWith('b')) || 
+        (playerColor === 'black' && piece.startsWith('w'))) {
         return false;
     }
 
     // Only allow dragging pieces for the side to move
-    if ((game.turn() === 'w' && piece.search(/^b/) !== -1) ||
-        (game.turn() === 'b' && piece.search(/^w/) !== -1)) {
+    if ((game.turn() === 'w' && piece.startsWith('b')) ||
+        (game.turn() === 'b' && piece.startsWith('w'))) {
         return false;
     }
 
@@ -82,12 +93,7 @@ function onDrop(source, target) {
     });
 
     if (move === null) {
-        // If move is invalid, select the target square if it's our piece
-        const piece = game.get(target);
-        if (piece && piece.color === game.turn()) {
-            handlePieceSelection(target, piece.type);
-        }
-        return 'snapback';
+        return 'snapback'; // Return the piece to its original position
     }
 
     // Successful move
@@ -95,18 +101,33 @@ function onDrop(source, target) {
 }
 
 function handleBoardClick(event) {
-    // Prevent clicking if the game is over or forfeited
-    if (game.game_over() || isGameForfeited || isGameDrawn) {
+    // Prevent clicking if the game hasn't started, is over, or forfeited
+    if (!isGameStarted || game.game_over() || isGameForfeited || isGameDrawn) {
         return;
     }
 
     const squareElement = event.target.closest('.square-55d63');
-    if (!squareElement) return;
+    if (!squareElement) {
+        return;
+    }
 
     const square = squareElement.getAttribute('data-square');
-    if (!square) return;
+
+    if (!square) {
+        return;
+    }
 
     const piece = game.get(square);
+
+    // Get the player's color from localStorage
+    const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
+    const playerColor = aiSettings ? aiSettings.playerColor : 'white';
+
+    // Prevent clicking on the computer's pieces
+    if ((playerColor === 'white' && piece && piece.color === 'b') || 
+        (playerColor === 'black' && piece && piece.color === 'w')) {
+        return;
+    }
 
     // If we have a selected square, attempt to move
     if (selectedSquare) {
@@ -360,12 +381,31 @@ function flipBoard() {
     updateGameStatus();
 }
 
-function updatePlayerNames() {
+function updatePlayerNames(playerColor) {
     const whitePlayerInput = document.getElementById('whitePlayerName');
     const blackPlayerInput = document.getElementById('blackPlayerName');
 
-    const whitePlayerName = whitePlayerInput.value.trim() || 'Player 1';
-    const blackPlayerName = blackPlayerInput.value.trim() || 'Player 2';
+    if (playerColor === 'white') {
+        whitePlayerInput.value = 'Player'; // User is White
+        blackPlayerInput.value = 'Computer'; // AI is Black
+        whitePlayerInput.disabled = false; // Allow input for the user
+        blackPlayerInput.disabled = true; // Disable input for the AI
+    } else if (playerColor === 'black') {
+        whitePlayerInput.value = 'Computer'; // AI is White
+        blackPlayerInput.value = 'Player'; // User is Black
+        whitePlayerInput.disabled = true; // Disable input for the AI
+        blackPlayerInput.disabled = false; // Allow input for the user
+    }
+
+
+    // Update the vsAiChessGameState in localStorage
+    const savedState = localStorage.getItem('vsAiChessGameState');
+    const gameState = savedState ? JSON.parse(savedState) : {};
+
+    gameState.whitePlayerName = whitePlayerInput.value;
+    gameState.blackPlayerName = blackPlayerInput.value;
+
+    localStorage.setItem('vsAiChessGameState', JSON.stringify(gameState));
 }
 
 function handleMouseoverSquare(square) {
@@ -513,9 +553,6 @@ function handleAnalyseButtonClick() {
     // Save the PGN to localStorage
     localStorage.setItem('savedPGN', pgn);
 
-    // Reset the vsChessGameState in localStorage
-    localStorage.removeItem('vsChessGameState');
-
     // Redirect to the Analyse Game page
     window.location.href = "/analyse-game"; // Ensure this matches your Flask route
 }
@@ -524,24 +561,20 @@ function saveGameState() {
     const gameState = {
         fen: game.fen(), // Current board position
         moves: moveList, // Save the moves array
-        whitePlayerName: document.getElementById('whitePlayerName').value.trim() || 'Player 1',
-        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || 'Player 2'
+        whitePlayerName: document.getElementById('whitePlayerName').value.trim() || '',
+        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || ''
     };
-    localStorage.setItem('vsChessGameState', JSON.stringify(gameState));
+    localStorage.setItem('vsAiChessGameState', JSON.stringify(gameState));
 }
 
 function loadGameState() {
-    const savedState = localStorage.getItem('vsChessGameState');
+    const savedState = localStorage.getItem('vsAiChessGameState');
     if (savedState) {
         const gameState = JSON.parse(savedState);
 
         // Load the FEN position
         game.load(gameState.fen);
         board.position(gameState.fen);
-
-        // Restore the move list
-        moveList.length = 0; // Clear the existing move list
-        gameState.moves.forEach(move => moveList.push(move));
 
         // Replay the moves to rebuild the game state
         gameState.moves.forEach(move => {
@@ -581,49 +614,136 @@ const config = {
 document.addEventListener('DOMContentLoaded', () => {
     board = Chessboard('myBoard', config);
 
-    const boardContainer = document.getElementById('myBoard');
-    if (boardContainer) {
-        boardContainer.addEventListener('click', handleBoardClick);
+    const aiSettingsButtonContainer = document.getElementById('aiSettingsButtonContainer');
+    const playerInfoContainer = document.getElementById('playerInfoContainer');
+    const moveDisplayContainer = document.getElementById('moveDisplayContainer');
+
+    // Load AI settings from localStorage
+    const savedAISettings = localStorage.getItem('aiSettings');
+    if (savedAISettings) {
+        const { aiStrength, playerColor } = JSON.parse(savedAISettings);
+
+        // Apply the saved AI settings
+        document.getElementById('aiStrength').value = aiStrength;
+        document.getElementById('playerColor').value = playerColor;
+
+        // Set the board orientation and player names
+        if (playerColor === 'white' || playerColor === 'black') {
+            board.orientation(playerColor);
+            updatePlayerNames(playerColor);
+        } else {
+            const randomColor = Math.random() < 0.5 ? 'white' : 'black';
+            board.orientation(randomColor);
+            updatePlayerNames(randomColor);
+        }
+
+        // Show the Player Info and Move Display containers
+        if (playerInfoContainer && moveDisplayContainer) {
+            playerInfoContainer.style.display = 'block';
+            moveDisplayContainer.style.display = 'block';
+        }
+
+         // Hide the AI Settings button
+         if (aiSettingsButtonContainer) {
+            aiSettingsButtonContainer.style.display = 'none';
+        }
+    } else {
+        // Show the AI Settings button
+        if (aiSettingsButtonContainer) {
+            aiSettingsButtonContainer.style.display = 'block';
+        }
+
+        // Hide the Player Info and Move Display containers
+        if (playerInfoContainer && moveDisplayContainer) {
+            playerInfoContainer.style.display = 'none';
+            moveDisplayContainer.style.display = 'none';
+        }
     }
 
-    const flipBoardButton = document.getElementById('flipBoard');
-    if (flipBoardButton) {
-        flipBoardButton.addEventListener('click', flipBoard);
-    }
-
-    const forfeitButton = document.getElementById('forfeitButton');
-    if (forfeitButton) {
-        forfeitButton.addEventListener('click', handleForfeitGame);
-    }
-
-    const offerDrawButton = document.getElementById('offerDrawButton');
-    if (offerDrawButton) {
-        offerDrawButton.addEventListener('click', handleOfferDraw);
-    }
-
-    const whitePlayerInput = document.getElementById('whitePlayerName');
-    const blackPlayerInput = document.getElementById('blackPlayerName');
-
-    whitePlayerInput.addEventListener('input', () => {
-        updatePlayerNames();
-        saveGameState(); 
+    // Open the settings modal when the button is clicked
+    const openSettingsButton = document.getElementById('openSettingsButton');
+    const settingsModal = document.getElementById('settingsModal');
+    openSettingsButton.addEventListener('click', () => {
+        if (settingsModal) {
+            settingsModal.style.display = 'block';
+        } else {
+            console.error('Settings modal not found!');
+        }
     });
 
-    blackPlayerInput.addEventListener('input', () => {
-        updatePlayerNames();
-        saveGameState();
+    // Handle AI Settings form submission
+    const aiSettingsForm = document.getElementById('aiSettingsForm');
+    aiSettingsForm.addEventListener('submit', (event) => {
+        event.preventDefault(); // Prevent default form submission
+
+        // Get the selected AI strength and player color
+        const aiStrength = document.getElementById('aiStrength').value;
+        let playerColor = document.getElementById('playerColor').value;
+        if (playerColor === 'random') {
+            const randomColor = Math.random() < 0.5 ? 'white' : 'black';
+            playerColor = randomColor;
+            document.getElementById('playerColor').value = randomColor; // Update the input value
+        }
+
+        // Save AI settings to localStorage
+        localStorage.setItem('aiSettings', JSON.stringify({ aiStrength, playerColor }));
+
+        // Reset the game
+        game.reset();
+        board.start();
+
+        // Set the board orientation based on the selected player color
+        if (playerColor === 'black') {
+            board.orientation('black');
+        } else { 
+            board.orientation('white');
+        } 
+        
+        // Update player names based on the selected color
+        updatePlayerNames(playerColor);
+
+        // Show the Player Info and Move Display containers
+        if (playerInfoContainer && moveDisplayContainer) {
+            playerInfoContainer.style.display = 'block';
+            moveDisplayContainer.style.display = 'block';
+        }
+
+        // Hide the AI Settings button
+        if (aiSettingsButtonContainer) {
+            aiSettingsButtonContainer.style.display = 'none';
+        }
+
+        // Enable board interactions
+        isGameStarted = true;
+
+        // Close the modal
+        settingsModal.style.display = 'none';
     });
 
-    const analyseButton = document.getElementById('analyseButton');
-    if (analyseButton) {
-        analyseButton.disabled = false; // Ensure the button is enabled
-        analyseButton.addEventListener('click', handleAnalyseButtonClick);
-    }
+    // Close the modal when the cancel button is clicked
+    const closeModalButton = document.getElementById('closeModalButton');
+    closeModalButton.addEventListener('click', () => {
+        settingsModal.style.display = 'none';
+    });
 
+    // Close the modal when clicking outside the modal content
+    window.addEventListener('click', (event) => {
+        if (event.target === settingsModal) {
+            settingsModal.style.display = 'none';
+        }
+    });
+
+    // Handle the "New Game" button click
     const newGameButton = document.getElementById('newGameButton');
     if (newGameButton) {
         newGameButton.disabled = false; // Ensure the button is enabled
         newGameButton.addEventListener('click', () => {
+            // Clear the saved AI settings from localStorage
+            localStorage.removeItem('aiSettings');
+            
+            // Clear the saved game settings from localStorage
+            localStorage.removeItem('vsAiChessGameState');
+
             // Reset the game
             game.reset();
             board.start();
@@ -642,9 +762,9 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('white-captured').innerHTML = '';
             document.getElementById('black-captured').innerHTML = '';
 
-            // Reset player names to default
-            document.getElementById('whitePlayerName').value = 'Player 1';
-            document.getElementById('blackPlayerName').value = 'Player 2';
+            // Reset player names to null strings
+            document.getElementById('whitePlayerName').value = '';
+            document.getElementById('blackPlayerName').value = '';
 
             // Reset the selected square
             selectedSquare = null;
@@ -660,7 +780,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update the game status
             updateGameStatus();
+
+            // Disable board interactions until "Start Game" is pressed again
+            isGameStarted = false;
+
+            // Refresh the page to clear the game info and move list
+            location.reload();
         });
+    }
+
+    const boardContainer = document.getElementById('myBoard');
+    if (boardContainer) {
+        boardContainer.addEventListener('click', handleBoardClick);
+    } else {
+        console.error('Board container not found!');
     }
 
     // Load the saved game state

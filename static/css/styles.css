@@ -663,3 +663,55 @@ body {
     padding: 5px 10px; /* Adjust padding for a smaller button */
     width: auto; /* Ensure the button width adjusts to its content */
 }
+
+   /* Modal styles */
+   .modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with opacity */
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 50%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.modal-footer {
+    text-align: right;
+    margin-top: 10px;
+}
+
+.modal-footer button {
+    margin-left: 10px;
+}
+
+.center-container {
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center;    /* Center vertically */
+    height: 100px;          /* Adjust height as needed */
+}
+
+.settings-button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
