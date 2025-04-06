@@ -184,6 +184,9 @@ function updateAfterMove(move) {
 
     // Check if it's the computer's turn
     checkComputerTurn();
+
+    // Enable the Forfeit and Offer Draw buttons
+    enableGameButtons();
 }
 
 function removeHighlights() {
@@ -450,18 +453,56 @@ function handleMouseoutSquare(square) {
     }
 }
 
-function handleOfferDraw() {
+async function handleOfferDraw() {
     if (game.game_over() || isGameDrawn) {
         return; // Don't allow draw if the game is already over or drawn
     }
 
+    // Check if the opponent is the AI
+    const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
+    const playerColor = aiSettings ? aiSettings.playerColor : 'white';
+    const computerColor = playerColor === 'white' ? 'black' : 'white';
+
+    if (game.turn() === computerColor[0]) {
+        // Let the AI decide whether to accept or decline the draw
+        const aiDecision = await getAIDrawDecision(game.fen());
+        if (aiDecision === 'accept') {
+            // Mark the game as drawn
+            isGameDrawn = true;
+
+            // Update the game status
+            const statusElement = document.getElementById('status');
+            if (statusElement) {
+                statusElement.textContent = 'Game drawn by agreement!';
+                statusElement.className = 'status-draw';
+                statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
+                statusElement.style.color = 'black';
+            }
+
+            // Disable all interactions on the board
+            board = Chessboard('myBoard', {
+                ...config,
+                draggable: false, // Disable dragging
+                position: game.fen() // Keep the current board position
+            });
+
+            // Disable buttons
+            document.getElementById('forfeitButton').disabled = true;
+            document.getElementById('offerDrawButton').disabled = true;
+
+            return;
+        } else {
+            showCustomAlert('AI declined the draw offer.');
+            return;
+        }
+    }
+
+    // If the opponent is a human, show the draw confirmation dialog
     showCustomConfirm('Accept Draw Offer?', (confirmOfferDraw) => {
         if (!confirmOfferDraw) {
-            showCustomAlert('Draw offer declined.'); // Use custom alert
+            showCustomAlert('Draw offer declined.');
             return; // Player declined the draw
         }
-
-        const moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
         // Mark the game as drawn
         isGameDrawn = true;
@@ -568,7 +609,8 @@ function saveGameState() {
         fen: game.fen(), // Current board position
         moves: moveList, // Save the moves array
         whitePlayerName: document.getElementById('whitePlayerName').value.trim() || '',
-        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || ''
+        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || '',
+        isGameStarted: isGameStarted // Save the `isGameStarted` flag
     };
     localStorage.setItem('vsAiChessGameState', JSON.stringify(gameState));
 }
@@ -582,6 +624,12 @@ function loadGameState() {
         game.load(gameState.fen);
         board.position(gameState.fen);
 
+        // Restore the move list
+        moveList.length = 0; // Clear the current move list
+        if (gameState.moves && Array.isArray(gameState.moves)) {
+            moveList.push(...gameState.moves); // Restore the saved moves
+        }
+
         // Replay the moves to rebuild the game state
         gameState.moves.forEach(move => {
             const moveDetails = game.move(move.replace(/^\d+\.\s*/, '')); // Remove move numbers if present
@@ -589,6 +637,9 @@ function loadGameState() {
                 updateAfterMove(moveDetails);
             }
         });
+
+        // Restore the `isGameStarted` flag
+        isGameStarted = gameState.isGameStarted || false;
 
         // Update the player names
         document.getElementById('whitePlayerName').value = gameState.whitePlayerName;
@@ -657,6 +708,19 @@ async function checkComputerTurn() {
         } catch (error) {
             // Handle errors silently
         }
+    }
+}
+
+function enableGameButtons() {
+    const forfeitButton = document.getElementById('forfeitButton');
+    const offerDrawButton = document.getElementById('offerDrawButton');
+
+    if (forfeitButton) {
+        forfeitButton.disabled = false; // Enable the Forfeit button
+    }
+
+    if (offerDrawButton) {
+        offerDrawButton.disabled = false; // Enable the Offer Draw button
     }
 }
 
@@ -799,6 +863,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Attach event listener for the "Analyse" button
+    const analyseButton = document.getElementById('analyseButton');
+    if (analyseButton) {
+        analyseButton.disabled = false; // Ensure the button is enabled
+        analyseButton.addEventListener('click', handleAnalyseButtonClick);
+    }
+
     // Handle the "New Game" button click
     const newGameButton = document.getElementById('newGameButton');
     if (newGameButton) {
@@ -860,6 +931,28 @@ document.addEventListener('DOMContentLoaded', () => {
         boardContainer.addEventListener('click', handleBoardClick);
     } else {
         console.error('Board container not found!');
+    }
+
+    // Attach event listener for the "Forfeit" button
+    const forfeitButton = document.getElementById('forfeitButton');
+    if (forfeitButton) {
+        forfeitButton.addEventListener('click', handleForfeitGame);
+    } else {
+        console.error('Forfeit button not found!');
+    }
+
+    // Attach event listener for the "Offer Draw" button
+    const offerDrawButton = document.getElementById('offerDrawButton');
+    if (offerDrawButton) {
+        offerDrawButton.addEventListener('click', handleOfferDraw);
+    } else {
+        console.error('Offer Draw button not found!');
+    }
+
+    // Attach event listener for the "Flip Board" button
+    const flipBoardButton = document.getElementById('flipBoard');
+    if (flipBoardButton) {
+        flipBoardButton.addEventListener('click', flipBoard);
     }
 
     // Load the saved game state

@@ -157,6 +157,9 @@ function updateAfterMove(move) {
 
     // Save the game state
     saveGameState();
+
+    // Enable the Forfeit and Offer Draw buttons
+    enableGameButtons();
 }
 
 function removeHighlights() {
@@ -558,6 +561,19 @@ function loadGameState() {
         // Update the UI
         updateMoveListDisplay(); // Refresh the move list in the UI
         updateGameStatus(); // Update the game status
+    }
+}
+
+function enableGameButtons() {
+    const forfeitButton = document.getElementById('forfeitButton');
+    const offerDrawButton = document.getElementById('offerDrawButton');
+
+    if (forfeitButton) {
+        forfeitButton.disabled = false; // Enable the Forfeit button
+    }
+
+    if (offerDrawButton) {
+        offerDrawButton.disabled = false; // Enable the Offer Draw button
     }
 }
 
