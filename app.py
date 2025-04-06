@@ -1,9 +1,12 @@
 import os
 
 from flask import Flask, flash, redirect, render_template, request, session, jsonify
+from stockfish import Stockfish
 
 # Configure application
 app = Flask(__name__)
+
+STOCKFISH_PATH = "./stockfish/stockfish-ubuntu-x86-64-avx2"
 
 @app.after_request
 def after_request(response):
@@ -31,6 +34,20 @@ def playVs():
 @app.route("/play-vs-ai")
 def playVsAi():
     return render_template("play_vs_ai.html")
+
+@app.route('/get_ai_move', methods=['POST'])
+def get_ai_move():
+    data = request.get_json()
+    fen = data.get('fen')
+    skill_level = int(data.get('skill', 10))  # Skill: 0 (weak) to 20 (strong)
+
+    stockfish = Stockfish(path=STOCKFISH_PATH)
+    stockfish.set_skill_level(skill_level)
+    stockfish.set_fen_position(fen)
+
+    best_move = stockfish.get_best_move()
+
+    return jsonify({'move': best_move})
 
 if __name__ == "__main__":
     app.run(debug=True)

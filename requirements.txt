@@ -10,3 +10,6 @@ Werkzeug==2.2.3
 
 # Environment management
 python-dotenv==1.0.0
+
+# Stockfish engine
+stockfish==3.27.0

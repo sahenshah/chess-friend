@@ -98,6 +98,9 @@ function onDrop(source, target) {
 
     // Successful move
     updateAfterMove(move);
+
+    // Remove highlights after the move
+    removeHighlights();
 }
 
 function handleBoardClick(event) {
@@ -178,6 +181,9 @@ function updateAfterMove(move) {
 
     // Save the game state
     saveGameState();
+
+    // Check if it's the computer's turn
+    checkComputerTurn();
 }
 
 function removeHighlights() {
@@ -591,6 +597,66 @@ function loadGameState() {
         // Update the UI
         updateMoveListDisplay(); // Refresh the move list in the UI
         updateGameStatus(); // Update the game status
+    }
+}
+
+async function getAIMove(fen, skill) {
+    const response = await fetch('/get_ai_move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fen, skill })
+    });
+
+    if (!response.ok) {
+        console.error('Failed to get AI move');
+        return null;
+    }
+
+    const data = await response.json();
+    return data.move;
+}
+
+async function checkComputerTurn() {
+    // Get the player's color from localStorage
+    const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
+    const playerColor = aiSettings ? aiSettings.playerColor : 'white';
+    const aiStrength = aiSettings ? aiSettings.aiStrength : '1';
+    const skill = parseInt(aiStrength, 10);
+
+    // Determine the computer's color
+    const computerColor = playerColor === 'white' ? 'black' : 'white';
+
+    // Check if it's the computer's turn
+    if (game.turn() === computerColor[0]) { // 'w' for white, 'b' for black
+        try {
+            // Get the AI move
+            const currentFEN = game.fen();
+            const aiMove = await getAIMove(currentFEN, skill);
+
+            if (aiMove) {
+                // Parse the AI move into `from` and `to` squares
+                const from = aiMove.slice(0, 2); // First two characters (e.g., "c7")
+                const to = aiMove.slice(2, 4);   // Next two characters (e.g., "c5")
+                const promotion = aiMove.length > 4 ? aiMove[4] : undefined; // Promotion piece if present
+
+                // Apply the AI move
+                const moveDetails = game.move({
+                    from: from,
+                    to: to,
+                    promotion: promotion // Use the promotion piece if provided
+                });
+
+                if (moveDetails) {
+                    board.position(game.fen());
+                    updateAfterMove(moveDetails);
+
+                    // Remove highlights after the move
+                    removeHighlights();
+                }
+            }
+        } catch (error) {
+            // Handle errors silently
+        }
     }
 }
 
