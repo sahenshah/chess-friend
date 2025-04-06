@@ -395,7 +395,12 @@ function handleMouseoverSquare(square) {
     if (isValidMove) {
         squareElement.classList.add('hover-highlight');
 
-        // Preview the move (full size, centered)
+        // Save the original content of the square
+        if (!squareElement.dataset.originalContent) {
+            squareElement.dataset.originalContent = squareElement.innerHTML;
+        }
+
+        // Add the hover preview
         const piece = game.get(selectedSquare);
         if (piece) {
             squareElement.innerHTML = `
@@ -412,9 +417,18 @@ function handleMouseoutSquare(square) {
     const squareElement = document.querySelector(`.square-${square}`);
     if (squareElement) {
         squareElement.classList.remove('hover-highlight');
-        // Remove any move preview
+
+        // Remove the hover preview
         const preview = squareElement.querySelector('.move-preview');
-        if (preview) preview.remove();
+        if (preview) {
+            preview.remove();
+        }
+
+        // Restore the original content of the square if it was saved
+        if (squareElement.dataset.originalContent) {
+            squareElement.innerHTML = squareElement.dataset.originalContent;
+            delete squareElement.dataset.originalContent; // Clean up the saved content
+        }
     }
 }
 
