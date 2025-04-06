@@ -49,6 +49,19 @@ def get_ai_move():
 
     return jsonify({'move': best_move})
 
+@app.route('/get_ai_evaluation', methods=['POST'])
+def get_ai_evaluation():
+    data = request.get_json()
+    fen = data.get('fen')
+
+    stockfish = Stockfish(path=STOCKFISH_PATH)
+    stockfish.set_fen_position(fen)
+
+    # Get the evaluation score from Stockfish
+    evaluation = stockfish.get_evaluation()
+    return jsonify({'evaluation': evaluation['value']})
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 

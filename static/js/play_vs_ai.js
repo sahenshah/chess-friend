@@ -463,47 +463,9 @@ async function handleOfferDraw() {
     const playerColor = aiSettings ? aiSettings.playerColor : 'white';
     const computerColor = playerColor === 'white' ? 'black' : 'white';
 
-    if (game.turn() === computerColor[0]) {
-        // Let the AI decide whether to accept or decline the draw
-        const aiDecision = await getAIDrawDecision(game.fen());
-        if (aiDecision === 'accept') {
-            // Mark the game as drawn
-            isGameDrawn = true;
-
-            // Update the game status
-            const statusElement = document.getElementById('status');
-            if (statusElement) {
-                statusElement.textContent = 'Game drawn by agreement!';
-                statusElement.className = 'status-draw';
-                statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
-                statusElement.style.color = 'black';
-            }
-
-            // Disable all interactions on the board
-            board = Chessboard('myBoard', {
-                ...config,
-                draggable: false, // Disable dragging
-                position: game.fen() // Keep the current board position
-            });
-
-            // Disable buttons
-            document.getElementById('forfeitButton').disabled = true;
-            document.getElementById('offerDrawButton').disabled = true;
-
-            return;
-        } else {
-            showCustomAlert('AI declined the draw offer.');
-            return;
-        }
-    }
-
-    // If the opponent is a human, show the draw confirmation dialog
-    showCustomConfirm('Accept Draw Offer?', (confirmOfferDraw) => {
-        if (!confirmOfferDraw) {
-            showCustomAlert('Draw offer declined.');
-            return; // Player declined the draw
-        }
-
+    // Let the AI decide whether to accept or decline the draw
+    const aiDecision = await getAIDrawDecision(game.fen());
+    if (aiDecision === 'accept') {
         // Mark the game as drawn
         isGameDrawn = true;
 
@@ -526,7 +488,14 @@ async function handleOfferDraw() {
         // Disable buttons
         document.getElementById('forfeitButton').disabled = true;
         document.getElementById('offerDrawButton').disabled = true;
-    });
+
+        return;
+    } else {
+        showCustomAlert('AI declined the draw offer.');
+        return;
+    }
+
+    checkComputerTurn();
 }
 
 function handleForfeitGame() {
@@ -610,7 +579,7 @@ function saveGameState() {
         moves: moveList, // Save the moves array
         whitePlayerName: document.getElementById('whitePlayerName').value.trim() || '',
         blackPlayerName: document.getElementById('blackPlayerName').value.trim() || '',
-        isGameStarted: isGameStarted // Save the `isGameStarted` flag
+        isGameStarted: isGameStarted // Save the game started flag
     };
     localStorage.setItem('vsAiChessGameState', JSON.stringify(gameState));
 }
@@ -640,6 +609,16 @@ function loadGameState() {
 
         // Restore the `isGameStarted` flag
         isGameStarted = gameState.isGameStarted || false;
+
+        // Restore the button states
+        const forfeitButton = document.getElementById('forfeitButton');
+        const offerDrawButton = document.getElementById('offerDrawButton');
+        if (forfeitButton) {
+            forfeitButton.disabled = !isGameStarted || isGameForfeited || game.game_over();
+        }
+        if (offerDrawButton) {
+            offerDrawButton.disabled = !isGameStarted || isGameDrawn || game.game_over();
+        }
 
         // Update the player names
         document.getElementById('whitePlayerName').value = gameState.whitePlayerName;
@@ -724,6 +703,37 @@ function enableGameButtons() {
     }
 }
 
+async function getAIDrawDecision(fen) {
+    try {
+        const response = await fetch('/get_ai_evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get AI evaluation');
+            return 'decline'; // Default to declining the draw if there's an error
+        }
+
+        const data = await response.json();
+        const evaluation = data.evaluation; // Stockfish evaluation score
+
+        // Decide based on the evaluation score
+        // Positive score favors the AI, negative score favors the opponent
+        if (evaluation > 0.5) {
+            return 'decline'; // AI is in a favorable position
+        } else if (evaluation < -0.5) {
+            return 'accept'; // AI is in an unfavorable position
+        } else {
+            return Math.random() < 0.5 ? 'accept' : 'decline'; // Neutral position, random decision
+        }
+    } catch (error) {
+        console.error('Error in getAIDrawDecision:', error);
+        return 'decline'; // Default to declining the draw in case of an error
+    }
+}
+
 const config = {
     draggable: true,
     position: 'start',
@@ -788,6 +798,8 @@ document.addEventListener('DOMContentLoaded', () => {
             playerInfoContainer.style.display = 'none';
             moveDisplayContainer.style.display = 'none';
         }
+            
+        isGameStarted = false; // Disable board interactions
     }
 
     // Open the settings modal when the button is clicked
@@ -912,14 +924,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset the board configuration
             board = Chessboard('myBoard', config);
 
+            // Disable board interactions until "Start Game" is pressed again
+            isGameStarted = false;
+
             // Save the reset game state
             saveGameState();
 
             // Update the game status
             updateGameStatus();
-
-            // Disable board interactions until "Start Game" is pressed again
-            isGameStarted = false;
 
             // Refresh the page to clear the game info and move list
             location.reload();

@@ -3,6 +3,7 @@ const game = new Chess();
 const moveList = [];
 let capturedPieces = { white: [], black: [] };
 let selectedSquare = null;
+let isGameStarted = false; // Tracks if the game has started
 let isGameForfeited = false; // Tracks if the game was forfeited
 let isGameDrawn = false; // Tracks if the game was drawn
 
@@ -143,6 +144,11 @@ function handleBoardClick(event) {
 }
 
 function updateAfterMove(move) {
+    // Set the game as started on the first move
+    if (!isGameStarted) {
+        isGameStarted = true;
+    }
+
     // Update the move list
     addMoveToList(move);
 
@@ -309,11 +315,13 @@ function updateGameStatus() {
 
     if (isGameForfeited) {
         status = 'Game forfeited!';
+        isGameStarted = false;
         statusElement.className = 'status-forfeit';
         statusElement.style.backgroundColor = '#ffcc00'; // Yellow for forfeit
         statusElement.style.color = 'black';
     } else if (isGameDrawn) {
         status = 'Game drawn by agreement!';
+        isGameStarted = false;
         statusElement.className = 'status-draw';
         statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
         statusElement.style.color = 'black';
@@ -321,16 +329,19 @@ function updateGameStatus() {
         // Check for specific game-ending conditions
         if (game.in_checkmate()) {
             status = `Checkmate! ${moveColor} loses.`;
+            isGameStarted = false;
             statusElement.className = 'status-checkmate';
             statusElement.style.backgroundColor = '#9c1313'; // Red for checkmate
             statusElement.style.color = 'white';
         } else if (game.in_draw()) {
             status = 'Game drawn!';
+            isGameStarted = false;
             statusElement.className = 'status-draw';
             statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
             statusElement.style.color = 'black';
         } else {
             status = 'Game over!';
+            isGameStarted = false;
             statusElement.className = 'status-over';
             statusElement.style.backgroundColor = '#6c757d'; // Gray for generic game over
             statusElement.style.color = 'white';
@@ -423,6 +434,9 @@ function handleOfferDraw() {
         // Mark the game as drawn
         isGameDrawn = true;
 
+        // Set the game as not started
+        isGameStarted = false;
+        
         // Update the game status
         const statusElement = document.getElementById('status');
         if (statusElement) {
@@ -466,6 +480,9 @@ function handleForfeitGame() {
         // Mark the game as forfeited
         isGameForfeited = true;
 
+        // Set the game as not started
+        isGameStarted = false;
+        
         // Update the game status
         const statusElement = document.getElementById('status');
         if (statusElement) {
@@ -528,7 +545,8 @@ function saveGameState() {
         fen: game.fen(), // Current board position
         moves: moveList, // Save the moves array
         whitePlayerName: document.getElementById('whitePlayerName').value.trim() || 'Player 1',
-        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || 'Player 2'
+        blackPlayerName: document.getElementById('blackPlayerName').value.trim() || 'Player 2',
+        isGameStarted: isGameStarted // Save the game started flag
     };
     localStorage.setItem('vsChessGameState', JSON.stringify(gameState));
 }
@@ -557,6 +575,20 @@ function loadGameState() {
         // Update the player names
         document.getElementById('whitePlayerName').value = gameState.whitePlayerName;
         document.getElementById('blackPlayerName').value = gameState.blackPlayerName;
+
+
+        // Restore the `isGameStarted` flag
+        isGameStarted = gameState.isGameStarted || false;
+
+        // Restore the button states
+        const forfeitButton = document.getElementById('forfeitButton');
+        const offerDrawButton = document.getElementById('offerDrawButton');
+        if (forfeitButton) {
+            forfeitButton.disabled = !isGameStarted || isGameForfeited || game.game_over();
+        }
+        if (offerDrawButton) {
+            offerDrawButton.disabled = !isGameStarted || isGameDrawn || game.game_over();
+        }
 
         // Update the UI
         updateMoveListDisplay(); // Refresh the move list in the UI
