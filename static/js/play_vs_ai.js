@@ -275,6 +275,10 @@ function updateCapturedPieces(move) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
+    // Add the captured piece to the capturedPieces object
+    const capturedColor = move.color === 'w' ? 'black' : 'white';
+    capturedPieces[capturedColor].push(move.captured);
+
     // Create a new image element for the captured piece
     const pieceImage = document.createElement('img');
     pieceImage.src = `/static/img/${capturedPieceColor}${move.captured.toUpperCase()}.png`;
@@ -593,9 +597,37 @@ function saveGameState() {
         moves: moveList, // Save the moves array
         whitePlayerName: document.getElementById('whitePlayerName').value.trim() || '',
         blackPlayerName: document.getElementById('blackPlayerName').value.trim() || '',
-        isGameStarted: isGameStarted // Save the game started flag
+        isGameStarted: isGameStarted, // Save the game started flag
+        capturedPieces: capturedPieces // Save captured pieces
     };
     localStorage.setItem('vsAiChessGameState', JSON.stringify(gameState));
+}
+
+function populateCapturedPieces() {
+    const whiteCapturedContainer = document.getElementById('white-captured');
+    const blackCapturedContainer = document.getElementById('black-captured');
+
+    // Clear previous captured pieces
+    whiteCapturedContainer.innerHTML = '';
+    blackCapturedContainer.innerHTML = '';
+
+    // Add captured pieces for white (pieces captured by black)
+    capturedPieces.white.forEach(piece => {
+        const pieceImg = document.createElement('img');
+        pieceImg.src = `/static/img/w${piece.toUpperCase()}.png`; // White pieces captured by black
+        pieceImg.alt = piece;
+        pieceImg.className = 'captured-piece';
+        whiteCapturedContainer.appendChild(pieceImg);
+    });
+
+    // Add captured pieces for black (pieces captured by white)
+    capturedPieces.black.forEach(piece => {
+        const pieceImg = document.createElement('img');
+        pieceImg.src = `/static/img/b${piece.toUpperCase()}.png`; // Black pieces captured by white
+        pieceImg.alt = piece;
+        pieceImg.className = 'captured-piece';
+        blackCapturedContainer.appendChild(pieceImg);
+    });
 }
 
 function loadGameState() {
@@ -623,6 +655,10 @@ function loadGameState() {
 
         // Restore the `isGameStarted` flag
         isGameStarted = gameState.isGameStarted || false;
+
+        // Restore captured pieces
+        capturedPieces = gameState.capturedPieces || { white: [], black: [] };
+        populateCapturedPieces();
 
         // Restore the button states
         const forfeitButton = document.getElementById('forfeitButton');

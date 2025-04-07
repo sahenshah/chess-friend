@@ -241,8 +241,29 @@ function handleMoveClick(e) {
     }
 }
 
-// Initialize the board
+function populateCapturedPieces() {
+    // Reset captured pieces
+    capturedPieces = { white: [], black: [] };
+
+    // Reset the game to the starting position
+    game.reset();
+
+    // Play through all the moves and track captured pieces
+    for (let i = 0; i < moves.length; i++) {
+        const move = game.move(moves[i]);
+        if (move?.captured) {
+            const color = move.color === 'w' ? 'black' : 'white'; // Opponent's color
+            const piece = (move.color === 'w' ? 'b' : 'w') + move.captured.toUpperCase();
+            capturedPieces[color].push(piece);
+        }
+    }
+
+    // Update the captured pieces UI
+    updateCapturedPieces();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize the board
     board = Chessboard('myBoard', config);
     setupMoveListHandlers();
 
@@ -278,6 +299,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Extract moves and update the move list
             moves = game.history(); // Get the list of moves from the PGN
             updateMoveList(); // Populate the move list in the UI
+        
+            // Populate captured pieces
+            populateCapturedPieces();
         }
     }
 
