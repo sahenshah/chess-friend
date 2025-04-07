@@ -677,6 +677,13 @@ function loadGameState() {
         // Update the UI
         updateMoveListDisplay(); // Refresh the move list in the UI
         updateGameStatus(); // Update the game status
+    
+        // Check if the computer should make the first move
+        const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
+        const playerColor = aiSettings ? aiSettings.playerColor : 'white';
+        if (playerColor === 'black' && game.turn() === 'w') {
+            checkComputerTurn(); // Let the computer make the first move
+        }
     }
 }
 
