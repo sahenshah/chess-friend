@@ -917,6 +917,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close the modal
         settingsModal.style.display = 'none';
+
+        // Let the computer make the first move if the player is black
+        if (playerColor === 'black' && game.turn() === 'w') {
+            checkComputerTurn();
+        }
+
+        // Let the computer make the first move if the player is white and the computer is white
+        if (playerColor === 'white' && game.turn() === 'b') {
+            checkComputerTurn();
+        }
     });
 
     // Close the modal when the cancel button is clicked
