@@ -471,51 +471,6 @@ function handleMouseoutSquare(square) {
     }
 }
 
-async function handleOfferDraw() {
-    if (game.game_over() || isGameDrawn) {
-        return; // Don't allow draw if the game is already over or drawn
-    }
-
-    // Check if the opponent is the AI
-    const aiSettings = JSON.parse(localStorage.getItem('aiSettings'));
-    const playerColor = aiSettings ? aiSettings.playerColor : 'white';
-    const computerColor = playerColor === 'white' ? 'black' : 'white';
-
-    // Let the AI decide whether to accept or decline the draw
-    const aiDecision = await getAIDrawDecision(game.fen());
-    if (aiDecision === 'accept') {
-        // Mark the game as drawn
-        isGameDrawn = true;
-
-        // Update the game status
-        const statusElement = document.getElementById('status');
-        if (statusElement) {
-            statusElement.textContent = 'Game drawn by agreement!';
-            statusElement.className = 'status-draw';
-            statusElement.style.backgroundColor = '#f0f4f8'; // Light gray for draw
-            statusElement.style.color = 'black';
-        }
-
-        // Disable all interactions on the board
-        board = Chessboard('myBoard', {
-            ...config,
-            draggable: false, // Disable dragging
-            position: game.fen() // Keep the current board position
-        });
-
-        // Disable buttons
-        document.getElementById('forfeitButton').disabled = true;
-        document.getElementById('offerDrawButton').disabled = true;
-
-        return;
-    } else {
-        showCustomAlert('AI declined the draw offer.');
-        return;
-    }
-
-    checkComputerTurn();
-}
-
 function handleForfeitGame() {
     if (game.game_over() || isGameForfeited) {
         return; // Don't allow forfeit if the game is already over or forfeited
@@ -771,37 +726,6 @@ function enableGameButtons() {
     }
 }
 
-async function getAIDrawDecision(fen) {
-    try {
-        const response = await fetch('/get_ai_evaluation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fen })
-        });
-
-        if (!response.ok) {
-            console.error('Failed to get AI evaluation');
-            return 'decline'; // Default to declining the draw if there's an error
-        }
-
-        const data = await response.json();
-        const evaluation = data.evaluation; // Stockfish evaluation score
-
-        // Decide based on the evaluation score
-        // Positive score favors the AI, negative score favors the opponent
-        if (evaluation > 0.5) {
-            return 'decline'; // AI is in a favorable position
-        } else if (evaluation < -0.5) {
-            return 'accept'; // AI is in an unfavorable position
-        } else {
-            return Math.random() < 0.5 ? 'accept' : 'decline'; // Neutral position, random decision
-        }
-    } catch (error) {
-        console.error('Error in getAIDrawDecision:', error);
-        return 'decline'; // Default to declining the draw in case of an error
-    }
-}
-
 const config = {
     draggable: true,
     position: 'start',
@@ -1031,14 +955,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('Forfeit button not found!');
     }
 
-    // Attach event listener for the "Offer Draw" button
-    const offerDrawButton = document.getElementById('offerDrawButton');
-    if (offerDrawButton) {
-        offerDrawButton.addEventListener('click', handleOfferDraw);
-    } else {
-        console.error('Offer Draw button not found!');
-    }
-
     // Attach event listener for the "Flip Board" button
     const flipBoardButton = document.getElementById('flipBoard');
     if (flipBoardButton) {
@@ -1047,6 +963,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load the saved game state
     loadGameState();
+
+    // Ensure the board is interactive if the game has started
+    if (isGameStarted) {
+        board.draggable = true;
+    } else {
+        board.draggable = false;
+    }
 
     updateGameStatus();
 });
