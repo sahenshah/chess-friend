@@ -93,6 +93,9 @@ function onDrop(source, target) {
 
     // Successful move
     updateAfterMove(move);
+    
+    // Remove highlights after the move
+    removeHighlights();
 }
 
 function handleBoardClick(event) {
@@ -525,11 +528,6 @@ function handleForfeitGame() {
     });
 }
 
-function redirectToAnalyse() {
-    // Redirect to the Analyse Game page
-    window.location.href = "/analyse-game"; // Ensure this matches your Flask route
-}
-
 function handleAnalyseButtonClick() {
     // Generate the PGN from the current game state
     let pgn = game.pgn({ maxWidth: 80, newline: '\n' }); // Ensure moves are included
@@ -553,9 +551,6 @@ function handleAnalyseButtonClick() {
 
     // Save the PGN to localStorage
     localStorage.setItem('savedPGN', pgn);
-
-    // Reset the vsChessGameState in localStorage
-    localStorage.removeItem('vsChessGameState');
 
     // Redirect to the Analyse Game page
     window.location.href = "/analyse-game"; // Ensure this matches your Flask route
