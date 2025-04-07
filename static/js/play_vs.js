@@ -529,6 +529,17 @@ function handleForfeitGame() {
 }
 
 function handleAnalyseButtonClick() {
+    // Remove the current savedPGN from localStorage
+    localStorage.removeItem('savedPGN');
+
+    // Reset the game to the starting position
+    game.reset();
+
+    // Replay all moves to rebuild the game state
+    moveList.forEach(move => {
+        game.move(move.replace(/^\d+\.\s*/, '')); // Remove move numbers if present
+    });
+
     // Generate the PGN from the current game state
     let pgn = game.pgn({ maxWidth: 80, newline: '\n' }); // Ensure moves are included
 
