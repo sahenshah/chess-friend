@@ -6,6 +6,7 @@ let selectedSquare = null;
 let isGameStarted = false; // Tracks if the game has started
 let isGameForfeited = false; // Tracks if the game was forfeited
 let isGameDrawn = false; // Tracks if the game was drawn
+const browser = window.browser || window.chrome;
 
 function onDragStart(source, piece, position, orientation) {
     // Prevent dragging if the game is over or forfeited
@@ -93,6 +94,9 @@ function onDrop(source, target) {
 
     // Successful move
     updateAfterMove(move);
+   
+    // Update the evaluation display 
+    updateEvaluation(); 
     
     // Remove highlights after the move
     removeHighlights();
@@ -483,6 +487,7 @@ function handleOfferDraw() {
     });
 }
 
+
 function handleForfeitGame() {
     if (game.game_over() || isGameForfeited) {
         return; // Don't allow forfeit if the game is already over or forfeited
@@ -526,6 +531,87 @@ function handleForfeitGame() {
         document.getElementById('forfeitButton').disabled = true;
         document.getElementById('offerDrawButton').disabled = true;
     });
+}
+
+function evalToBarValue(evaluation) {
+    if (evaluation.type === 'mate') {
+        // Mate is decisive — use a high value, but normalized
+        const sign = evaluation.value > 0 ? 1 : -1;
+        const distance = Math.abs(evaluation.value);
+        return sign * (1 - 1 / (distance + 1));  // approaches ±1 as mate gets closer
+    }
+
+    if (evaluation.type === 'cp') {
+        // Scale centipawn to a float in [-1, 1]
+        const maxEval = 1000; // Max value to clip (10 pawns)
+        const cp = Math.max(-maxEval, Math.min(maxEval, evaluation.value));
+        return cp / maxEval;
+    }
+
+    console.warn('Unknown evaluation type:', evaluation.type);
+    return 0; // default/fallback
+}
+
+async function getCurrentEvaluation(fen, skill) {
+    try {
+        const response = await fetch('/get_ai_evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen, skill })
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get AI evaluation. Status:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+
+        console.log('Backend Response:', data);
+
+        const barValue = evalToBarValue(data);
+        console.log('Bar Value:', barValue);
+
+        return barValue;
+    } catch (error) {
+        console.error('Error fetching AI evaluation:', error);
+        return null;
+    }
+}
+
+async function updateEvaluation() {
+    const evaluationText = document.getElementById('evaluation-text');
+    const evalBar = document.getElementById('eval-bar');
+
+    if (!evaluationText || !evalBar) {
+        console.error('Evaluation elements not found!');
+        return;
+    }
+
+    // Get the current FEN and AI skill level
+    const fen = game.fen();
+    
+    try {
+        // Fetch the evaluation from Stockfish
+        const evaluation = await getCurrentEvaluation(fen);
+
+        if (evaluation === null) {
+            evaluationText.textContent = 'Evaluation: N/A';
+            evalBar.style.background = 'linear-gradient(to bottom, black 50%, white 50%)'; // Neutral bar
+            return;
+        }
+
+        // Update the evaluation text
+        evaluationText.textContent = `${evaluation.toFixed(1)}`;
+
+        // Update the eval-bar to reflect the evaluation
+        const evalPercentage = ((evaluation + 1) / 2) * 100; // Map -1 to 1 range to 0% to 100%
+        evalBar.style.background = `linear-gradient(to top, white  ${evalPercentage}%, black ${evalPercentage}%)`;
+    } catch (error) {
+        console.error('Error fetching evaluation:', error);
+        evaluationText.textContent = 'Evaluation: Error';
+        evalBar.style.background = 'linear-gradient(to top, black 50%, white 50%)'; // Neutral bar
+    }
 }
 
 function handleAnalyseButtonClick() {
@@ -688,6 +774,19 @@ document.addEventListener('DOMContentLoaded', () => {
     board = Chessboard('myBoard', config);
 
     const boardContainer = document.getElementById('myBoard');
+    const evalBar = document.getElementById('eval-bar');
+    const evaluationText = document.getElementById('evaluation-text'); // Evaluation display element
+
+    // Function to update the height of the eval-bar
+    const updateEvalBarHeight = () => {
+        if (boardContainer && evalBar) {
+            evalBar.style.height = `${boardContainer.offsetHeight}px`;
+        }
+    };
+
+    // Set the initial height of the eval-bar
+    updateEvalBarHeight();
+
     if (boardContainer) {
         boardContainer.addEventListener('click', handleBoardClick);
     }
@@ -772,5 +871,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load the saved game state
     loadGameState();
 
+    // Update the eval-bar height after loading the game state
+    updateEvalBarHeight();
+
+    updateEvaluation(); // Update the evaluation display
     updateGameStatus();
 });

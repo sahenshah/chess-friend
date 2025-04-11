@@ -29,7 +29,7 @@ body {
     justify-content: space-between;
     align-items: flex-start; /* Align items to the top */
     gap: 30px; /* Space between the board and the panel */
-    max-width: 1200px;
+    max-width: 1500px;
     margin: 30px auto;
     padding: 20px;
     background-color: white;
@@ -40,6 +40,20 @@ body {
     box-shadow: var(--shadow-lg);
 }
 
+/* Eval Bar */
+.eval-bar {
+    width: 12px; /* Set the width of the eval bar */
+    height: 100%; /* Full height of the bar */
+    border: 1px solid #ccc; /* Add a light border */
+    position: relative; /* Position it relative to the parent container */
+    background-color: #f0f0f0; /* Light gray background */
+    display: inline-block; /* Ensure it aligns properly with the chessboard */
+    overflow: hidden; /* Hide overflow for the fill */
+    border-radius: 8px; /* Add rounded corners */
+    box-shadow: var(--shadow-sm); /* Add a subtle shadow */
+}
+
+/* Board and Status */
 .board-and-status {
     flex: 3; /* Allocate 75% of the space to the board */
     display: flex;
@@ -714,4 +728,25 @@ body {
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
+}
+
+/* Evaluation Display */
+.evaluation-display {
+    margin-bottom: 15px; /* Add spacing below the evaluation text */
+    text-align: center; /* Center the text */
+    font-size: 1.5em; /* Increase the font size */
+    font-weight: bold; /* Make the text bold */
+    color: #333; /* Dark text color */
+    background-color: #f9f9f9; /* Light background color */
+    padding: 10px 15px; /* Add padding around the text */
+    border-radius: 8px; /* Add rounded corners */
+    box-shadow: var(--shadow-sm); /* Add a subtle shadow */
+    border: 1px solid #ddd; /* Add a light border */
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Add hover effects */
+}
+
+/* Hover effect for evaluation display */
+.evaluation-display:hover {
+    transform: translateY(-2px); /* Slightly lift the element */
+    box-shadow: var(--shadow-md); /* Increase shadow on hover */
 }

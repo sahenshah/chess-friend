@@ -59,7 +59,12 @@ def get_ai_evaluation():
 
     # Get the evaluation score from Stockfish
     evaluation = stockfish.get_evaluation()
-    return jsonify({'evaluation': evaluation['value']})
+
+    # Return both the evaluation value and type
+    return jsonify({
+        'type': evaluation['type'],
+        'value': evaluation['value']  # 'cp' for centipawns or 'mate' for checkmate
+    })
 
 
 if __name__ == "__main__":

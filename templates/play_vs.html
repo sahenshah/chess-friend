@@ -16,6 +16,11 @@
     
     {% block main %}
     <div class="game-container">
+        <!-- Eval Bar -->
+        <div id="eval-bar" class="eval-bar">
+            <div id="eval-bar-inner" class="eval-bar-inner"></div>
+        </div>
+                
         <!-- Board and Status Container -->
         <div class="board-and-status">
             <!-- Chessboard container -->
@@ -39,6 +44,11 @@
 
         <!-- Game Info Container -->
         <div class="game-info">
+            <!-- Evaluation Display -->
+            <div class="evaluation-display">
+                <span id="evaluation-text">0.00</span>
+            </div>
+        
             <!-- Player Info -->
             <div id="playerInfo" class="player-info">
                 <div class="white-player">
