@@ -53,17 +53,22 @@ def get_ai_move():
 def get_ai_evaluation():
     data = request.get_json()
     fen = data.get('fen')
+    depth = int(data.get('depth', 15))  # Default depth is 15 if not provided
 
     stockfish = Stockfish(path=STOCKFISH_PATH)
     stockfish.set_fen_position(fen)
 
+    # Set the depth for evaluation
+    stockfish.set_depth(depth)
+
     # Get the evaluation score from Stockfish
     evaluation = stockfish.get_evaluation()
 
-    # Return both the evaluation value and type
+    # Return the evaluation value, type, and depth
     return jsonify({
         'type': evaluation['type'],
-        'value': evaluation['value']  # 'cp' for centipawns or 'mate' for checkmate
+        'value': evaluation['value'],  # 'cp' for centipawns or 'mate' for checkmate
+        'depth': depth
     })
 
 

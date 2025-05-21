@@ -3,6 +3,8 @@ const game = new Chess();
 var moves = [];
 var currentMoveIndex = -1;
 let capturedPieces = { white: [], black: [] };
+const evaluationCache = {}; // Cache to store evaluations by FEN
+let isEvaluationInProgress = false; // Flag to track if an evaluation request is in progress
 
 /* Configuration for analysis board (no move functionality) */
 const config = {
@@ -223,6 +225,8 @@ function navigateToMove(targetIndex) {
     updateMoveList();
     updateCapturedPieces();
     highlightCurrentMove(); // Highlight and scroll to the current move
+
+    runEvaluationLoop();
 }
 
 function setupMoveListHandlers() {
@@ -262,11 +266,160 @@ function populateCapturedPieces() {
     updateCapturedPieces();
 }
 
+async function runEvaluationLoop() {
+    if (isEvaluationInProgress) {
+        // If a request is already in progress, skip this call
+        return;
+    }
+
+    isEvaluationInProgress = true; // Set the flag to indicate a request is in progress
+
+    let depth = 10; // Starting depth
+    let previousEvaluation = null;
+    let stableCount = 0;
+    const maxStableIterations = 3;
+    const timeoutDuration = 5000; // Timeout duration in milliseconds
+
+    const fen = game.fen(); // Get the current FEN string
+    const moveIndex = currentMoveIndex; // Get the current move index
+
+    // Load evaluationTable from localStorage
+    const evaluationTable = JSON.parse(localStorage.getItem('evaluationTable')) || [];
+
+    // Check if the evaluation is already cached in evaluationTable
+    if (evaluationTable[moveIndex] !== null) {
+        // Use the cached evaluation
+        console.log(`Using cached evaluation for move ${moveIndex}:`, evaluationTable[moveIndex]);
+        updateEvaluationWithResult(evaluationTable[moveIndex], depth);
+        isEvaluationInProgress = false; // Reset the flag
+        return;
+    }
+
+    while (stableCount < maxStableIterations) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutDuration);
+
+        try {
+            const evaluation = await getCurrentEvaluation(fen, depth, controller.signal);
+            clearTimeout(timeout);
+
+            if (!evaluation || typeof evaluation.value === 'undefined') {
+                console.warn(`Invalid evaluation received for move ${moveIndex}:`, evaluation);
+                break;
+            }
+
+            // Update evaluationTable with the new evaluation
+            evaluationTable[moveIndex] = evaluation;
+            localStorage.setItem('evaluationTable', JSON.stringify(evaluationTable));
+
+            // Log the evaluation result
+            console.log(`AI Evaluation for move ${moveIndex}:`, evaluation);
+
+            updateEvaluationWithResult(evaluation, depth);
+
+            const evaluationValue = evaluation.value;
+            const scaledEvaluationValue = evaluation.type === 'cp'
+                ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10))
+                : evaluation.type === 'mate'
+                ? (evaluationValue > 0 ? 10 : -10)
+                : 0;
+
+            const roundedEvaluation = parseFloat(scaledEvaluationValue.toFixed(1));
+
+            if (previousEvaluation !== null && roundedEvaluation === previousEvaluation) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+            }
+
+            previousEvaluation = roundedEvaluation;
+            depth += 1;
+        } catch (error) {
+            clearTimeout(timeout);
+            if (error.name === 'AbortError') {
+                console.warn(`Request timed out at depth: ${depth}`);
+                break;
+            } else {
+                console.error('Error fetching evaluation:', error);
+                break;
+            }
+        }
+    }
+
+    isEvaluationInProgress = false; // Reset the flag when the request completes
+    return previousEvaluation;
+}
+
+function updateEvaluationWithResult(evaluation, depth) {
+    const evaluationText = document.getElementById('evaluation-text');
+    const evalBar = document.getElementById('eval-bar');
+
+    if (!evaluationText || !evalBar) {
+        console.error('Evaluation elements not found!');
+        return;
+    }
+
+    if (!evaluation || typeof evaluation.value === 'undefined') {
+        console.warn('Invalid evaluation object:', evaluation);
+        evaluationText.textContent = 'Evaluation: N/A';
+        evalBar.style.background = 'linear-gradient(to bottom, black 50%, white 50%)'; // Neutral bar
+        return;
+    }
+
+    // Access the evaluation value
+    const evaluationValue = evaluation.value;
+
+    // Scale the evaluation value to the range [-10, 10]
+    const scaledEvaluationValue = evaluation.type === 'cp'
+        ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10)) // Scale centipawns to [-10, 10]
+        : evaluation.type === 'mate'
+        ? (evaluationValue > 0 ? 10 : -10) // Use ±10 for mate evaluations
+        : 0; // Default to 0 for unknown types
+
+    // Update the evaluation text
+    const formattedEvaluationText = scaledEvaluationValue > 0
+        ? `+${scaledEvaluationValue.toFixed(1)}`
+        : scaledEvaluationValue.toFixed(1);
+    evaluationText.textContent = formattedEvaluationText;
+
+    // Update the eval-bar to reflect the scaled evaluation
+    const evalPercentage = ((scaledEvaluationValue + 10) / 20) * 100; // Map -10 to 10 range to 0% to 100%
+    evalBar.style.background = `linear-gradient(to top, white ${evalPercentage}%, black ${evalPercentage}%)`;
+
+}
+
+async function getCurrentEvaluation(fen, depth, signal) {
+    try {
+        const response = await fetch('/get_ai_evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen, depth }),
+            signal // Pass the AbortSignal to the fetch request
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get AI evaluation. Status:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        return data; // Return the full evaluation data, including depth
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.warn('Evaluation request aborted due to timeout.');
+        } else {
+            console.error('Error fetching AI evaluation:', error);
+        }
+        return null;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize the board
     board = Chessboard('myBoard', config);
     setupMoveListHandlers();
 
+    const boardContainer = document.getElementById('myBoard');
     const savedPGN = localStorage.getItem('savedPGN');
     const uploadSection = document.getElementById('uploadSection');
     const playerInfo = document.getElementById('playerInfo');
@@ -275,6 +428,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const event = document.getElementById('event');
     const eventDate = document.getElementById('eventDate');
     const analyseNewGameButton = document.getElementById('analyseNewGameButton');
+    const evalBar = document.getElementById('eval-bar');
+    const evaluationText = document.getElementById('evaluation-text'); // Evaluation display element
+   
+     // Function to update the height of the eval-bar
+    const updateEvalBarHeight = () => {
+        if (boardContainer && evalBar) {
+            evalBar.style.height = `${boardContainer.offsetHeight}px`;
+        }
+    };
+
+    // Set the initial height of the eval-bar
+    updateEvalBarHeight();
 
     if (savedPGN) {
         if (!game.load_pgn(savedPGN)) {
@@ -292,6 +457,11 @@ document.addEventListener('DOMContentLoaded', () => {
             blackPlayerName.textContent = headers.Black || 'Unknown';
             event.textContent = headers.Event || 'Unknown'; 
             eventDate.textContent = headers.EventDate || 'Unknown';
+            
+            // Update the evaluation display
+            //setInterval(() => {
+            //    runEvaluationLoop();
+            //}, 5000); // Run every 5 seconds
 
             // Update the board position
             board.position(game.fen());
@@ -326,8 +496,10 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadSection.style.display = 'block';
             playerInfo.style.display = 'none';
 
-            // Clear saved PGN from localStorage
+            // Clear saved PGN and eval from localStorage
             localStorage.removeItem('savedPGN');
+            localStorage.removeItem('evaluationTable');
+        
         });
     }
 
@@ -363,6 +535,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Extract moves and update the move list
                     moves = game.history(); // Get the list of moves from the PGN
                     updateMoveList(); // Populate the move list in the UI
+                    console.log('Moves loaded from PGN:', moves); // Debugging log
+
+                    // Initialize evaluationTable with null values for each move
+                    const evaluationTable = Array(moves.length).fill(null);
+                    localStorage.setItem('evaluationTable', JSON.stringify(evaluationTable));
+                    console.log('Initialized evaluationTable:', evaluationTable); // Debugging log
+
                 }
             };
             reader.readAsText(file);
@@ -416,6 +595,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     .then(pgnContent => {
                         // Save the PGN content to localStorage
                         localStorage.setItem('savedPGN', pgnContent);
+
+                        // Load the PGN into the game
+                        if (!game.load_pgn(pgnContent)) {
+                            alert('Invalid PGN file!');
+                            console.error('Failed to load PGN:', pgnContent); // Debugging log
+                            return;
+                        }
+
+                        // Extract moves from the PGN
+                        moves = game.history(); // Get the list of moves
+                        console.log('Moves loaded from PGN:', moves); // Debugging log
+
+                        // Initialize evaluationTable with null values for each move
+                        const evaluationTable = Array(moves.length).fill(null);
+                        localStorage.setItem('evaluationTable', JSON.stringify(evaluationTable));
+                        console.log('Initialized evaluationTable:', evaluationTable); // Debugging log
 
                         // Redirect to the Analyse Game page
                         window.location.href = "/analyse-game";

@@ -96,7 +96,7 @@ function onDrop(source, target) {
     updateAfterMove(move);
    
     // Update the evaluation display 
-    updateEvaluation(); 
+    runEvaluationLoop(); 
     
     // Remove highlights after the move
     removeHighlights();
@@ -552,12 +552,13 @@ function evalToBarValue(evaluation) {
     return 0; // default/fallback
 }
 
-async function getCurrentEvaluation(fen, skill) {
+async function getCurrentEvaluation(fen, depth, signal) {
     try {
         const response = await fetch('/get_ai_evaluation', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ fen, skill })
+            body: JSON.stringify({ fen, depth }),
+            signal // Pass the AbortSignal to the fetch request
         });
 
         if (!response.ok) {
@@ -566,20 +567,18 @@ async function getCurrentEvaluation(fen, skill) {
         }
 
         const data = await response.json();
-
-        console.log('Backend Response:', data);
-
-        const barValue = evalToBarValue(data);
-        console.log('Bar Value:', barValue);
-
-        return barValue;
+        return data; // Return the full evaluation data, including depth
     } catch (error) {
-        console.error('Error fetching AI evaluation:', error);
+        if (error.name === 'AbortError') {
+            console.error('Request aborted due to timeout.');
+        } else {
+            console.error('Error fetching AI evaluation:', error);
+        }
         return null;
     }
 }
 
-async function updateEvaluation() {
+function updateEvaluationWithResult(evaluation, depth) {
     const evaluationText = document.getElementById('evaluation-text');
     const evalBar = document.getElementById('eval-bar');
 
@@ -588,31 +587,34 @@ async function updateEvaluation() {
         return;
     }
 
-    // Get the current FEN and AI skill level
-    const fen = game.fen();
-    
-    try {
-        // Fetch the evaluation from Stockfish
-        const evaluation = await getCurrentEvaluation(fen);
-
-        if (evaluation === null) {
-            evaluationText.textContent = 'Evaluation: N/A';
-            evalBar.style.background = 'linear-gradient(to bottom, black 50%, white 50%)'; // Neutral bar
-            return;
-        }
-
-        // Update the evaluation text
-        evaluationText.textContent = `${evaluation.toFixed(1)}`;
-
-        // Update the eval-bar to reflect the evaluation
-        const evalPercentage = ((evaluation + 1) / 2) * 100; // Map -1 to 1 range to 0% to 100%
-        evalBar.style.background = `linear-gradient(to top, white  ${evalPercentage}%, black ${evalPercentage}%)`;
-    } catch (error) {
-        console.error('Error fetching evaluation:', error);
-        evaluationText.textContent = 'Evaluation: Error';
-        evalBar.style.background = 'linear-gradient(to top, black 50%, white 50%)'; // Neutral bar
+    if (evaluation === null) {
+        evaluationText.textContent = 'Evaluation: N/A';
+        evalBar.style.background = 'linear-gradient(to bottom, black 50%, white 50%)'; // Neutral bar
+        return;
     }
+
+    // Access the evaluation value
+    const evaluationValue = evaluation.value;
+
+    // Scale the evaluation value to the range [-10, 10]
+    const scaledEvaluationValue = evaluation.type === 'cp'
+        ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10)) // Scale centipawns to [-10, 10]
+        : evaluation.type === 'mate'
+        ? (evaluationValue > 0 ? 10 : -10) // Use ±10 for mate evaluations
+        : 0; // Default to 0 for unknown types
+
+    // Update the evaluation text
+    const formattedEvaluationText = scaledEvaluationValue > 0
+        ? `+${scaledEvaluationValue.toFixed(1)}`
+        : scaledEvaluationValue.toFixed(1);
+    evaluationText.textContent = formattedEvaluationText;
+
+    // Update the eval-bar to reflect the scaled evaluation
+    const evalPercentage = ((scaledEvaluationValue + 10) / 20) * 100; // Map -10 to 10 range to 0% to 100%
+    evalBar.style.background = `linear-gradient(to top, white ${evalPercentage}%, black ${evalPercentage}%)`;
+
 }
+
 
 function handleAnalyseButtonClick() {
     // Remove the current savedPGN from localStorage
@@ -753,6 +755,70 @@ function enableGameButtons() {
     }
 }
 
+async function runEvaluationLoop() {
+    let depth = 20; // Starting depth
+    let previousEvaluation = null; // Tracks the previous evaluation value
+    let stableCount = 0; // Tracks how many times the evaluation value remains stable
+    const maxStableIterations = 3; // Number of stable iterations required to stop the loop
+    const timeoutDuration = 10000; // Timeout duration in milliseconds (10 seconds)
+
+    while (stableCount < maxStableIterations) {
+        // Create an AbortController to handle timeouts
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), timeoutDuration);
+
+        try {
+            // Fetch the evaluation for the current depth with a timeout
+            const evaluation = await getCurrentEvaluation(game.fen(), depth, controller.signal);
+
+            // Clear the timeout if the request completes successfully
+            clearTimeout(timeout);
+
+            if (evaluation === null) {
+                break; // Exit the loop if evaluation is unavailable
+            }
+
+            // Update the evaluation display using the fetched evaluation
+            updateEvaluationWithResult(evaluation, depth);
+
+            // Access and scale the evaluation value
+            const evaluationValue = evaluation.value;
+            const scaledEvaluationValue = evaluation.type === 'cp'
+                ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10)) // Scale centipawns to [-10, 10]
+                : evaluation.type === 'mate'
+                ? (evaluationValue > 0 ? 10 : -10) // Use ±10 for mate evaluations
+                : 0; // Default to 0 for unknown types
+
+            // Round the scaled evaluation value to 1 decimal place
+            const roundedEvaluation = parseFloat(scaledEvaluationValue.toFixed(1));
+
+            // Check if the evaluation value has stabilized
+            if (previousEvaluation !== null && roundedEvaluation === previousEvaluation) {
+                stableCount++;
+            } else {
+                stableCount = 0; // Reset the counter if the value changes
+            }
+
+            previousEvaluation = roundedEvaluation; // Update the previous evaluation value
+
+            // Increment the depth for the next iteration
+            depth += 2;
+        } catch (error) {
+            clearTimeout(timeout); // Clear the timeout in case of an error
+
+            if (error.name === 'AbortError') {
+                console.error(`Request timed out at depth: ${depth}`);
+                break; // Exit the loop on timeout
+            } else {
+                console.error('Error fetching evaluation:', error);
+                break; // Exit the loop on other errors
+            }
+        }
+    }
+
+    return previousEvaluation; // Return the last evaluation value
+}
+
 const config = {
     draggable: true,
     position: 'start',
@@ -865,6 +931,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Update the game status
             updateGameStatus();
+
+            // Run the evaluation loop for the new game
+            runEvaluationLoop();
         });
     }
 
@@ -874,6 +943,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update the eval-bar height after loading the game state
     updateEvalBarHeight();
 
-    updateEvaluation(); // Update the evaluation display
+    runEvaluationLoop(); // Update the evaluation display
     updateGameStatus();
 });
