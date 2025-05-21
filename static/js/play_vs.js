@@ -755,16 +755,27 @@ function enableGameButtons() {
     }
 }
 
+// Add a variable to keep track of the current evaluation controller
+let currentEvalController = null;
+
 async function runEvaluationLoop() {
-    let depth = 20; // Starting depth
+    // Abort any previous evaluation request if still running
+    if (currentEvalController) {
+        currentEvalController.abort();
+    }
+
+    let depth = 12; // Starting depth
     let previousEvaluation = null; // Tracks the previous evaluation value
     let stableCount = 0; // Tracks how many times the evaluation value remains stable
     const maxStableIterations = 3; // Number of stable iterations required to stop the loop
     const timeoutDuration = 10000; // Timeout duration in milliseconds (10 seconds)
 
+    // Create a new AbortController for this evaluation
+    currentEvalController = new AbortController();
+
     while (stableCount < maxStableIterations) {
-        // Create an AbortController to handle timeouts
-        const controller = new AbortController();
+        // Use the current controller for all requests in this loop
+        const controller = currentEvalController;
         const timeout = setTimeout(() => controller.abort(), timeoutDuration);
 
         try {
@@ -807,13 +818,21 @@ async function runEvaluationLoop() {
             clearTimeout(timeout); // Clear the timeout in case of an error
 
             if (error.name === 'AbortError') {
-                console.error(`Request timed out at depth: ${depth}`);
-                break; // Exit the loop on timeout
+                // Only log if this is the current controller (not a previous one)
+                if (controller === currentEvalController) {
+                    console.error(`Request timed out or aborted at depth: ${depth}`);
+                }
+                break; // Exit the loop on timeout or abort
             } else {
                 console.error('Error fetching evaluation:', error);
                 break; // Exit the loop on other errors
             }
         }
+    }
+
+    // Clear the controller reference if this is the latest evaluation
+    if (currentEvalController && currentEvalController.signal.aborted === false) {
+        currentEvalController = null;
     }
 
     return previousEvaluation; // Return the last evaluation value
