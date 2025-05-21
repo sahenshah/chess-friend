@@ -118,51 +118,31 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.globe.min.js"></script>
         <script>
-          document.addEventListener('DOMContentLoaded', function() {
-            VANTA.GLOBE({
-              el: "#vanta-bg",
-              mouseControls: true,
-              touchControls: true,
-              minHeight: 200.00,
-              minWidth: 200.00,
-              scale: 1.00,
-              scaleMobile: 1.00,
-              color: 0x757373,
-                color2: 0x757373,
-                backgroundColor: 0x2f4a57
+            document.addEventListener('DOMContentLoaded', function () {
+                VANTA.GLOBE({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    minHeight: 200.00,
+                    minWidth: 200.00,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: 0x757373,
+                    color2: 0x757373,
+                    backgroundColor: 0x2f4a57
+                });
             });
-          });
-            </script>
+        </script>
         
         <script>
-            const logoImages = [
-                "{{ url_for('static', filename='img/wB.png') }}",
-                "{{ url_for('static', filename='img/bK.png') }}",
-                "{{ url_for('static', filename='img/wQ.png') }}",
-                "{{ url_for('static', filename='img/bN.png') }}",
-                "{{ url_for('static', filename='img/wN.png') }}",
-                "{{ url_for('static', filename='img/bB.png') }}",
-                "{{ url_for('static', filename='img/wR.png') }}",
-                "{{ url_for('static', filename='img/bP.png') }}",
-                "{{ url_for('static', filename='img/wK.png') }}",
-                "{{ url_for('static', filename='img/bR.png') }}",
-                "{{ url_for('static', filename='img/wP.png') }}",
-                "{{ url_for('static', filename='img/bQ.png') }}",
-            ];
-            let logoIndex = 0;
+            // Only show a static knight logo (e.g., white knight)
             const logoImg = document.getElementById('navbar-logo');
-            
-            // Add CSS for smooth fade transition
-            logoImg.style.transition = "opacity 0.5s";
-            setInterval(() => {
-                logoImg.style.opacity = 0;
-                setTimeout(() => {
-                    logoIndex = (logoIndex + 1) % logoImages.length;
-                    logoImg.src = logoImages[logoIndex];
-                    logoImg.style.opacity = 1;
-                }, 500); // Match this to the transition duration
-            }, 2500);
+            if (logoImg) {
+                logoImg.src = "{{ url_for('static', filename='img/bN.png') }}";
+                logoImg.style.transition = ""; // Remove transition if present
+            }
         </script>
+        
         <script>
             function syncEvalBarHeight() {
                 const boardEl = document.getElementById('myBoard');
