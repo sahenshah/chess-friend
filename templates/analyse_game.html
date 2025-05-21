@@ -18,32 +18,34 @@
     {% block main %}
     
     <div class="game-container">
-        <!-- Eval Bar -->
-        <div id="eval-bar" class="eval-bar">
-            <div id="eval-bar-inner" class="eval-bar-inner"></div>
-        </div>
-
-        <!-- Board and Status Container -->
-        <div class="board-and-status">
-            <!-- Chessboard container -->
-            <div id="myBoard"></div>
-            
-            <!-- Game status display -->
-            <div id="status" class="game-status"></div>
-
-            <!-- Controls (moved here) -->
-            <div class="controls">
-                <button id="prevMove">Previous Move</button>
-                <button id="nextMove">Next Move</button>
-                <button id="flipBoard" class="flip-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"/>
-                    </svg>
-                    Flip Board
-                </button>
+        <div class="board-row">
+            <!-- Eval Bar -->
+            <div id="eval-bar" class="eval-bar">
+                <div id="eval-bar-inner" class="eval-bar-inner"></div>
+            </div>
+        
+            <!-- Board and Status Container -->
+            <div class="board-and-status">
+                <!-- Chessboard container -->
+                <div id="myBoard"></div>
+        
+                <!-- Game status display -->
+                <div id="status" class="game-status"></div>
+        
+                <!-- Controls (moved here) -->
+                <div class="controls">
+                    <button id="prevMove">Previous Move</button>
+                    <button id="nextMove">Next Move</button>
+                    <button id="flipBoard" class="flip-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z" />
+                        </svg>
+                        Flip Board
+                    </button>
+                </div>
             </div>
         </div>
-
         <!-- Game Info Container -->
         <div class="game-info">
             <!-- Evaluation Display -->

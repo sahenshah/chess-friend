@@ -128,11 +128,13 @@ function highlightCurrentMove() {
         const moveItem = document.querySelector(`.move-item[data-index="${currentMoveIndex}"]`);
         if (moveItem) {
             moveItem.classList.add('highlighted');
-            // Scroll to the current move and center it in the window
-            moveItem.scrollIntoView({
-                behavior: 'smooth', // Smooth scrolling
-                block: 'center', // Center the move in the window
-            });
+            // Only scroll to the move on large screens
+            if (window.innerWidth > 900) {
+                moveItem.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+            }
         }
     }
 }
@@ -264,6 +266,20 @@ function populateCapturedPieces() {
 
     // Update the captured pieces UI
     updateCapturedPieces();
+}
+
+function scrollToBoardIfMobile() {
+    if (window.innerWidth <= 900) { // Adjust breakpoint as needed
+        const board = document.getElementById('myBoard');
+        if (board) {
+            // Calculate the offset position with a gap (e.g., 40px)
+            const rect = board.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const gap = 40; // px, adjust as needed
+            const top = rect.top + scrollTop - gap;
+            window.scrollTo({ top, behavior: 'smooth' });
+        }
+    }
 }
 
 /* Evaluation Functions */
@@ -562,12 +578,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (nextMoveBtn) {
         nextMoveBtn.addEventListener('click', () => {
             navigateToMove(currentMoveIndex + 1);
+            scrollToBoardIfMobile();
         });
     }
 
     if (prevMoveBtn) {
         prevMoveBtn.addEventListener('click', () => {
             navigateToMove(currentMoveIndex - 1);
+            scrollToBoardIfMobile();
         });
     }
 

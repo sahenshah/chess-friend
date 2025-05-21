@@ -163,6 +163,27 @@
                 }, 500); // Match this to the transition duration
             }, 2500);
         </script>
+        <script>
+            function syncEvalBarHeight() {
+                const boardEl = document.getElementById('myBoard');
+                const evalBarEl = document.getElementById('eval-bar');
+                if (boardEl && evalBarEl) {
+                    evalBarEl.style.height = boardEl.offsetHeight + 'px';
+                }
+            }
+            
+            window.addEventListener('resize', function() {
+                if (window.board && typeof window.board.resize === 'function') {
+                    window.board.resize();
+                }
+                syncEvalBarHeight();
+            });
+            
+            // Also call after DOM is loaded and after any board orientation/size change
+            document.addEventListener('DOMContentLoaded', function() {
+                syncEvalBarHeight();
+            });
+        </script>
     </body>
 
 </html>

@@ -32,7 +32,7 @@ body {
     max-width: 1500px;
     margin: 30px auto;
     padding: 20px;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.925);
     border-radius: 12px;
     box-shadow: var(--shadow-md);
 }
@@ -51,6 +51,7 @@ body {
     overflow: hidden; /* Hide overflow for the fill */
     border-radius: 8px; /* Add rounded corners */
     box-shadow: var(--shadow-sm); /* Add a subtle shadow */
+    margin-right: 12px;
 }
 
 /* Board and Status */
@@ -62,7 +63,6 @@ body {
     gap: 15px;
     width: 100%; /* Ensure it scales properly */
     max-width: 650px; /* Limit the width of the parent container */
-    margin: 0 auto; /* Center the container */
 }
 
 /* Board Column */
@@ -464,111 +464,6 @@ body {
     100% { box-shadow: inset 0 0 10px 5px rgba(255, 0, 0, 0.5); }
 }
 
-/* Responsive Design */
-@media (max-width: 900px) {
-    .game-container {
-        flex-direction: wrap;
-        justify-content: center;
-    }
-    
-    .board-and-status, .game-info {
-        flex: 1 1 100%; /* Take full width */
-        max-width: 100%;
-    }
-    
-    .game-info {
-        margin-top: 20px; /* Add spacing between the board and the panel */
-    }
-
-    .controls button {
-        flex: 1 1 100%;
-    }
-}
-
-/* Responsive Design for Narrow Screens */
-@media (max-width: 768px) {
-    .game-container {
-        flex-direction: column; /* Stack the board and game info vertically */
-        align-items: center; /* Center align the items */
-        gap: 20px; /* Add spacing between the stacked elements */
-        padding: 10px; /* Reduce padding for smaller screens */
-    }
-
-    .board-and-status, .game-info {
-        flex: 1 1 100%; /* Take full width */
-        max-width: 100%; /* Remove width constraints */
-    }
-
-    .game-info {
-        margin-top: 10px; /* Add spacing between the board and the panel */
-        padding: 10px; 
-    }
-
-    #myBoard {
-        max-width: 100%; /* Allow the board to scale down */
-        height: auto; /* Maintain aspect ratio */
-    }
-
-    .controls {
-        flex-direction: row; /* Stack buttons horizontally */
-        gap: 10px; /* Add spacing between buttons */
-    }
-
-    .controls button {
-        width: 100%; /* Make buttons full width */
-        padding: 10px; /* Increase padding for better touch interaction */
-    }
-
-    .move-table-container {
-        max-height: 200px; /* Reduce the height of the move list */
-        overflow-y: auto; /* Ensure scrolling works */
-    }
-
-    .move-table th, .move-table td {
-        font-size: 0.75em; /* Reduce font size for smaller screens */
-        padding: 3px 6px; /* Compact cell padding */
-    }
-
-    .captured-pieces {
-        gap: 3px; /* Reduce spacing between captured pieces */
-        padding: 5px;
-    }
-
-    .captured-piece {
-        width: 20px; /* Reduce the size of captured pieces */
-        height: 20px;
-    }
-}
-
-@media (max-width: 480px) {
-    .game-container {
-        padding: 5px; /* Further reduce padding for very small screens */
-    }
-
-    .game-status {
-        font-size: 0.9em; /* Reduce font size for the status bar */
-        padding: 6px; /* Reduce padding */
-    }
-
-    .player-info {
-        font-size: 0.8em; /* Reduce font size for player info */
-    }
-
-    .white-player, .black-player {
-        font-size: 0.8em; /* Reduce font size for player names */
-        padding: 6px 8px; /* Adjust padding */
-    }
-
-    .move-table-container {
-        max-height: 150px; /* Further reduce the height of the move list */
-    }
-
-    .controls button {
-        font-size: 0.8em; /* Reduce button font size */
-        padding: 8px; /* Adjust padding */
-    }
-}
-
 /* Custom Alert Box Styles */
 .custom-alert {
     position: fixed;
@@ -750,3 +645,205 @@ body {
     transform: translateY(-2px); /* Slightly lift the element */
     box-shadow: var(--shadow-md); /* Increase shadow on hover */
 }
+
+/* Board row: keep eval bar and board together */
+.board-row {
+    display: flex;
+    flex-direction: row; /* Always row, never column */
+    align-items: flex-start;
+    justify-content: center;
+    width: 100%;
+}
+
+.container-py0 {
+    margin-left: 124.5px;
+    margin-right: 124.5px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .container-py0 {
+        margin-left: 40px;
+        margin-right: 40px;
+    }
+}
+
+@media (max-width: 1000px) {
+    .container-py0 {
+        margin-left: 10px;
+        margin-right: 10px;
+    }
+
+    .game-container {
+        flex-direction: wrap;
+        justify-content: center;
+    }
+    
+    .board-and-status, .game-info {
+        flex: 1 1 100%; /* Take full width */
+        max-width: 100%;
+    }
+    
+    .game-info {
+        margin-top: 20px; /* Add spacing between the board and the panel */
+    }
+
+    .controls button {
+        flex: 1 1 100%;
+    }
+    
+    #myBoard {
+        max-width: 100%; /* Allow the board to scale down */
+        height: auto; /* Maintain aspect ratio */
+    }
+
+    .controls {
+        flex-direction: row; /* Stack buttons horizontally */
+        gap: 10px; /* Add spacing between buttons */
+    }
+
+    .controls button {
+        width: 100%; /* Make buttons full width */
+        padding: 10px; /* Increase padding for better touch interaction */
+    }
+
+    .move-table-container {
+        max-height: 200px; /* Reduce the height of the move list */
+        overflow-y: auto; /* Ensure scrolling works */
+    }
+
+    .move-table th, .move-table td {
+        font-size: 0.75em; /* Reduce font size for smaller screens */
+        padding: 3px 6px; /* Compact cell padding */
+    }
+
+    .captured-pieces {
+        gap: 3px; /* Reduce spacing between captured pieces */
+        padding: 5px;
+    }
+
+    .captured-piece {
+        width: 20px; /* Reduce the size of captured pieces */
+        height: 20px;
+    }
+
+    .board-row {
+        flex-direction: row; /* Do NOT stack vertically */
+        align-items: flex-start;
+        justify-content: center;
+    }
+    #eval-bar {
+        margin-bottom: 0;
+        margin-right: 8px;
+    }
+}
+
+/* Responsive Design for Narrow Screens */
+@media (max-width: 768px) {
+    .container-py0 {
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+
+    .game-container {
+        flex-direction: column; /* Stack the board and game info vertically */
+        align-items: center; /* Center align the items */
+        gap: 20px; /* Add spacing between the stacked elements */
+        padding: 10px; /* Reduce padding for smaller screens */
+    }
+
+    .board-and-status, .game-info {
+        flex: 1 1 100%; /* Take full width */
+        max-width: 100%; /* Remove width constraints */
+    }
+
+    .game-info {
+        margin-top: 10px; /* Add spacing between the board and the panel */
+        padding: 10px; 
+    }
+
+    #myBoard {
+        max-width: 100%; /* Allow the board to scale down */
+        height: auto; /* Maintain aspect ratio */
+    }
+
+    .controls {
+        flex-direction: row; /* Stack buttons horizontally */
+        gap: 10px; /* Add spacing between buttons */
+    }
+
+    .controls button {
+        width: 100%; /* Make buttons full width */
+        padding: 10px; /* Increase padding for better touch interaction */
+    }
+
+    .move-table-container {
+        max-height: 200px; /* Reduce the height of the move list */
+        overflow-y: auto; /* Ensure scrolling works */
+    }
+
+    .move-table th, .move-table td {
+        font-size: 0.75em; /* Reduce font size for smaller screens */
+        padding: 3px 6px; /* Compact cell padding */
+    }
+
+    .captured-pieces {
+        gap: 3px; /* Reduce spacing between captured pieces */
+        padding: 5px;
+    }
+
+    .captured-piece {
+        width: 20px; /* Reduce the size of captured pieces */
+        height: 20px;
+    }
+
+    .board-row {
+        flex-direction: row; /* Do NOT stack vertically */
+        align-items: flex-start;
+        justify-content: center;
+    }
+    #eval-bar {
+        margin-bottom: 0;
+        margin-right: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-container {
+        padding: 5px; /* Further reduce padding for very small screens */
+    }
+
+    .game-status {
+        font-size: 0.9em; /* Reduce font size for the status bar */
+        padding: 6px; /* Reduce padding */
+    }
+
+    .player-info {
+        font-size: 0.8em; /* Reduce font size for player info */
+    }
+
+    .white-player, .black-player {
+        font-size: 0.8em; /* Reduce font size for player names */
+        padding: 6px 8px; /* Adjust padding */
+    }
+
+    .move-table-container {
+        max-height: 150px; /* Further reduce the height of the move list */
+    }
+
+    .controls button {
+        font-size: 0.8em; /* Reduce button font size */
+        padding: 8px; /* Adjust padding */
+    }
+
+    .board-row {
+        flex-direction: row; /* Do NOT stack vertically */
+        align-items: flex-start;
+        justify-content: center;
+    }
+    #eval-bar {
+        margin-bottom: 0;
+        margin-right: 4px;
+    }
+}
+
