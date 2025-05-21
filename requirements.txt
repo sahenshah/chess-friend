@@ -1,6 +1,7 @@
 # Flask (if using Flask as the backend framework)
 Flask==2.2.3
 requests
+gunicorn
 
 # Jinja2 (used for templating in Flask or Django)
 Jinja2==3.1.2
