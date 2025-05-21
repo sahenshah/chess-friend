@@ -6,6 +6,8 @@ let selectedSquare = null;
 let isGameStarted = false; // Tracks if the game was started
 let isGameForfeited = false; // Tracks if the game was forfeited
 let isGameDrawn = false; // Tracks if the game was drawn
+let currentEvalController = null;
+
 
 function onDragStart(source, piece, position, orientation) {
     // Prevent dragging if the game hasn't started, is over, or forfeited
@@ -101,6 +103,8 @@ function onDrop(source, target) {
 
     // Remove highlights after the move
     removeHighlights();
+
+    runEvaluationLoop();
 }
 
 function handleBoardClick(event) {
@@ -507,9 +511,12 @@ function handleForfeitGame() {
             position: game.fen() // Keep the current board position
         });
 
-        // Disable buttons
-        document.getElementById('forfeitButton').disabled = true;
-        document.getElementById('offerDrawButton').disabled = true;
+        // Disable buttons safely
+        const forfeitBtn = document.getElementById('forfeitButton');
+        if (forfeitBtn) forfeitBtn.disabled = true;
+
+        const offerDrawBtn = document.getElementById('offerDrawButton');
+        if (offerDrawBtn) offerDrawBtn.disabled = true;
     });
 }
 
@@ -726,6 +733,162 @@ function enableGameButtons() {
     }
 }
 
+/*Evaluation Functions*/
+// Add a variable to keep track of the current evaluation controller
+async function getCurrentEvaluation(fen, depth, signal, abortedByTimeoutRef) {
+    try {
+        const response = await fetch('/get_ai_evaluation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fen, depth }),
+            signal // Pass the AbortSignal to the fetch request
+        });
+
+        if (!response.ok) {
+            console.error('Failed to get AI evaluation. Status:', response.status);
+            return null;
+        }
+
+        const data = await response.json();
+        return data; // Return the full evaluation data, including depth
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            if (abortedByTimeoutRef.value) {
+                console.error('Request aborted due to timeout.');
+            }
+        } else {
+            console.error('Error fetching AI evaluation:', error);
+        }
+        return null;
+    }
+}
+
+function updateEvaluationWithResult(evaluation, depth) {
+    const evaluationText = document.getElementById('evaluation-text');
+    const evalBar = document.getElementById('eval-bar');
+
+    if (!evaluationText || !evalBar) {
+        console.error('Evaluation elements not found!');
+        return;
+    }
+
+    if (evaluation === null) {
+        evaluationText.textContent = 'Evaluation: N/A';
+        evalBar.style.background = 'linear-gradient(to bottom, black 50%, white 50%)'; // Neutral bar
+        return;
+    }
+
+    // Access the evaluation value
+    const evaluationValue = evaluation.value;
+
+    // Scale the evaluation value to the range [-10, 10]
+    const scaledEvaluationValue = evaluation.type === 'cp'
+        ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10)) // Scale centipawns to [-10, 10]
+        : evaluation.type === 'mate'
+        ? (evaluationValue > 0 ? 10 : -10) // Use ±10 for mate evaluations
+        : 0; // Default to 0 for unknown types
+
+    // Update the evaluation text
+    const formattedEvaluationText = scaledEvaluationValue > 0
+        ? `+${scaledEvaluationValue.toFixed(1)}`
+        : scaledEvaluationValue.toFixed(1);
+    evaluationText.textContent = formattedEvaluationText;
+
+    // Update the eval-bar to reflect the scaled evaluation
+    const evalPercentage = ((scaledEvaluationValue + 10) / 20) * 100; // Map -10 to 10 range to 0% to 100%
+    evalBar.style.background = `linear-gradient(to top, white ${evalPercentage}%, black ${evalPercentage}%)`;
+
+}
+
+async function runEvaluationLoop() {
+    // Abort any previous evaluation request if still running
+    if (currentEvalController) {
+        currentEvalController.abort();
+    }
+
+    // Always create a new controller for this evaluation
+    const controller = new AbortController();
+    currentEvalController = controller;
+
+    let depth = 12;
+    let previousEvaluation = null;
+    let stableCount = 0;
+    const maxStableIterations = 3;
+    const maxDepth = 30;
+    const timeoutDuration = 10000;
+
+    while (stableCount < maxStableIterations) {
+        const abortedByTimeoutRef = { value: false }; 
+        const timeout = setTimeout(() => {
+            abortedByTimeoutRef.value = true;
+            controller.abort();
+        }, timeoutDuration);
+        
+        try {
+            if (depth > maxDepth) 
+                break;
+
+            const evaluation = await getCurrentEvaluation(game.fen(), depth, controller.signal, abortedByTimeoutRef);
+
+            clearTimeout(timeout);
+
+            if (evaluation === null) {
+                clearTimeout(timeout); // Redundant if already done, but safe
+                break;
+            }
+
+            updateEvaluationWithResult(evaluation, depth);
+
+            const evaluationValue = evaluation.value;
+            const scaledEvaluationValue = evaluation.type === 'cp'
+                ? Math.max(-10, Math.min(10, (evaluationValue / 1000) * 10))
+                : evaluation.type === 'mate'
+                ? (evaluationValue > 0 ? 10 : -10)
+                : 0;
+
+            const roundedEvaluation = Math.round(scaledEvaluationValue * 10) / 10; 
+
+            if (previousEvaluation !== null && roundedEvaluation === previousEvaluation) {
+                stableCount++;
+            } else {
+                stableCount = 0;
+            }
+
+            previousEvaluation = roundedEvaluation;
+            depth += 2;
+        } catch (error) {
+            clearTimeout(timeout);
+
+            if (error.name === 'AbortError') {
+                if (controller === currentEvalController) {
+                    console.error(`Request timed out or aborted at depth: ${depth}`);
+                }
+                break;
+            } else {
+                console.error('Error fetching AI evaluation:', error);
+                break;
+            }
+        }
+    }
+
+    // Only clear the controller if this is the latest evaluation
+    if (currentEvalController === controller && !controller.signal.aborted) {
+        currentEvalController = null;
+    }
+
+    return previousEvaluation;
+}
+
+const forfeitBtn = document.getElementById('forfeitButton');
+if (forfeitBtn) {
+    forfeitBtn.disabled = true;
+}
+
+const offerDrawBtn = document.getElementById('offerDrawButton');
+if (offerDrawBtn) {
+    offerDrawBtn.disabled = true;
+}
+
 const config = {
     draggable: true,
     position: 'start',
@@ -746,9 +909,13 @@ const config = {
 document.addEventListener('DOMContentLoaded', () => {
     board = Chessboard('myBoard', config);
 
+    runEvaluationLoop();
+
     const aiSettingsButtonContainer = document.getElementById('aiSettingsButtonContainer');
     const playerInfoContainer = document.getElementById('playerInfoContainer');
     const moveDisplayContainer = document.getElementById('moveDisplayContainer');
+    const evalBar = document.getElementById('eval-bar');
+
 
     // Load AI settings from localStorage
     const savedAISettings = localStorage.getItem('aiSettings');
@@ -972,4 +1139,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateGameStatus();
+
+    // Function to update the height of the eval-bar
+    const updateEvalBarHeight = () => {
+        if (boardContainer && evalBar) {
+            evalBar.style.height = `${boardContainer.offsetHeight}px`;
+        }
+    };
+
+    // Set the initial height of the eval-bar
+    updateEvalBarHeight();
 });

@@ -860,7 +860,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const boardContainer = document.getElementById('myBoard');
     const evalBar = document.getElementById('eval-bar');
-    const evaluationText = document.getElementById('evaluation-text'); // Evaluation display element
 
     // Function to update the height of the eval-bar
     const updateEvalBarHeight = () => {

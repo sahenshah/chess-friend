@@ -266,6 +266,7 @@ function populateCapturedPieces() {
     updateCapturedPieces();
 }
 
+/* Evaluation Functions */
 async function runEvaluationLoop() {
     if (isEvaluationInProgress) {
         // If a request is already in progress, skip this call

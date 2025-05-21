@@ -7,7 +7,6 @@
     
     <!-- Chessboard.js CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 </head>
 <body>
 
@@ -19,6 +18,11 @@
 
     {% block main %}
     <div class="game-container">
+        <!-- Eval Bar -->
+        <div id="eval-bar" class="eval-bar">
+            <div id="eval-bar-inner" class="eval-bar-inner"></div>
+        </div>
+
         <!-- Board and Status Container -->
         <div class="board-and-status">
             <!-- Chessboard container -->
@@ -41,6 +45,11 @@
 
         <!-- Game Info Container -->
         <div id="gameInfoContainer" class="game-info">
+            <!-- Evaluation Display -->
+            <div class="evaluation-display">
+                <span id="evaluation-text">0.00</span>
+            </div>
+        
             <!-- AI Settings Button -->
             <div id="aiSettingsButtonContainer" class="center-container" style="margin-top: 20px; margin-bottom: 10px;">
                 <button id="openSettingsButton" class="settings-button">AI Settings</button>

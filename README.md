@@ -97,8 +97,14 @@
   The backend (Flask) is responsible for routing, API endpoints, and Stockfish integration, while the frontend (JavaScript) manages user interaction and UI updates. This modular approach makes the codebase easier to maintain and extend.
 
 - **Evaluation Caching:**  
-  Evaluations for each move are cached in `localStorage` to avoid redundant server requests and improve performance, especially when navigating through long games.
+  Evaluations for each move in the analysis section are cached in `localStorage` to avoid redundant server requests and improve performance, especially when navigating through long games.
 
+- **Real Time Evaluation Optimisation:**  
+  Real time Stockfish evaluations optimised to continuously evaluate the current board position and stop when the evaluation result becomes stable for a number of iterations or a timeout/abort occurs. This improves performance at faster play speeds and improves evaluation when left over a longer period of time. (current max calculation timeout is set to 10s)
+
+- **Evaluation Styling:**  
+  Simple Evaluation bar and evaluation score displayed to user
+ 
 - **Jinja Templating:**  
   Jinja is used to keep HTML DRY and maintainable, allowing for easy updates to navigation, layout, and shared components.
 
