@@ -1,6 +1,6 @@
 # CHESS FRIEND
 
-#### Video Demo:  <URL HERE>
+#### Video Demo: https://youtu.be/wFXjfu2qrnU 
 
 ---
 
