@@ -152,5 +152,5 @@ Open [http://localhost:5000](http://localhost:5000) to view it in your browser.
 
 ---
 
-## Live Site 
-https://chess-friend.onrender.com/
+## Live Site deployed on Render
+[Live Site]https://chess-friend.onrender.com/
