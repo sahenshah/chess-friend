@@ -489,6 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
             // Populate captured pieces
             populateCapturedPieces();
+        
+             // --- Ensure evaluationTable exists and is correct length ---
+            let evaluationTable = JSON.parse(localStorage.getItem('evaluationTable'));
+            if (!evaluationTable || !Array.isArray(evaluationTable) || evaluationTable.length !== moves.length) {
+                evaluationTable = Array(moves.length).fill(null);
+                localStorage.setItem('evaluationTable', JSON.stringify(evaluationTable));
+            }
         }
     }
 
