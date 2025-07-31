@@ -11,9 +11,12 @@ STOCKFISH_PATH = "./stockfish/stockfish-ubuntu-x86-64-avx2"
 @app.after_request
 def after_request(response):
     """Ensure responses aren't cached"""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Expires"] = 0
-    response.headers["Pragma"] = "no-cache"
+    if request.path.startswith('/static/img/'):
+        response.headers['Cache-Control'] = 'public, max-age=31536000'
+    else:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Expires"] = "0"
+        response.headers["Pragma"] = "no-cache"
     return response
 
 @app.route("/")
